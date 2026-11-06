@@ -9,6 +9,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+let 通过 = 0;
+const 失败 = [];
+function ok(名, 条件, 实际) {
+  if (条件) 通过++;
+  else 失败.push(名 + (实际 === undefined ? '' : ' → ' + JSON.stringify(实际)));
+}
+
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const CARD = path.join(ROOT, 'cards', 'manfan');
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'dmk-shell-'));
@@ -122,15 +129,30 @@ global.localStorage = win.localStorage;
 global.getVariables = () => ({ stat_data: stat });
 global.eventOn = () => ({ stop() {} });
 
+/* ---------- 静态守卫：全屏层不能常驻 pointer-events:auto ---------- */
+// 曾经的线上故障：遮罩 opacity:0 但仍 pointer-events:auto，
+// 一层铺满全屏的透明 div 吃掉所有点击，页面看着没卡死却完全点不动。
+{
+  const 源 = fs.readFileSync(path.join(CARD, 'apps', 'shell', 'index.js'), 'utf8');
+  const 取块 = (选择器) => {
+    const i = 源.indexOf(选择器 + '{');
+    if (i < 0) return '';
+    return 源.slice(i, 源.indexOf('}', i) + 1);
+  };
+  const scrim = 取块('.dmk-scrim');
+  const scrimOn = 取块('.dmk-scrim.dmk-on');
+  const drawer = 取块('.dmk-drawer');
+  const drawerOn = 取块('.dmk-drawer.dmk-on');
+  ok('遮罩关闭态不含 pointer-events:auto', scrim && !/pointer-events\s*:\s*auto/.test(scrim), scrim.includes('pointer-events:auto'));
+  ok('遮罩关闭态 visibility:hidden', /visibility\s*:\s*hidden/.test(scrim));
+  ok('遮罩打开态恢复 pointer-events:auto', /pointer-events\s*:\s*auto/.test(scrimOn));
+  ok('抽屉关闭态不含 pointer-events:auto', drawer && !/pointer-events\s*:\s*auto/.test(drawer), drawer.includes('pointer-events:auto'));
+  ok('抽屉打开态恢复 pointer-events:auto', /pointer-events\s*:\s*auto/.test(drawerOn));
+}
+
 /* ---------- 加载模块 ---------- */
 await import(pathToFileURL(path.join(TMP, 'apps', 'shell', 'index.mjs')).href);
 
-let 通过 = 0;
-const 失败 = [];
-function ok(名, 条件, 实际) {
-  if (条件) 通过++;
-  else 失败.push(名 + (实际 === undefined ? '' : ' → ' + JSON.stringify(实际)));
-}
 
 const api = win.__DMK_SHELL__;
 ok('自动挂载并暴露 api', !!api);
@@ -144,6 +166,8 @@ ok('胶囊默认在右侧', parseFloat(胶囊.style.left) > 900, 胶囊.style.le
 const drawer = 遍历(root, (n) => n.className === 'dmk-drawer', [])[0];
 ok('抽屉存在', !!drawer);
 ok('初始是关着的', !drawer.classList.contains('dmk-on'));
+const scrimEl = 遍历(root, (n) => n.className === 'dmk-scrim', [])[0];
+ok('遮罩初始也没有 dmk-on（否则会吃掉点击）', !!scrimEl && !scrimEl.classList.contains('dmk-on'));
 
 api.开();
 ok('打开后带 dmk-on', drawer.classList.contains('dmk-on'));

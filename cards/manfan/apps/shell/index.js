@@ -41,14 +41,20 @@ const 样式 = `
   box-shadow:0 2px 10px rgba(0,0,0,.35);backdrop-filter:blur(2px);transition:opacity .18s}
 #${胶囊ID}:active{cursor:grabbing}
 #${胶囊ID}:hover{opacity:.92}
-.dmk-scrim{position:fixed;inset:0;background:rgba(20,16,11,.34);pointer-events:auto;
-  opacity:0;transition:opacity .2s}
-.dmk-scrim.dmk-on{opacity:1}
+/* 关闭态必须 pointer-events:none + visibility:hidden。
+   只靠 opacity:0 隐藏的话，一层铺满全屏的透明 div 会吃掉所有点击，
+   页面看起来没卡死（动画还在跑）但完全点不动。 */
+.dmk-scrim{position:fixed;inset:0;background:rgba(20,16,11,.34);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .2s,visibility .2s}
+.dmk-scrim.dmk-on{opacity:1;visibility:visible;pointer-events:auto}
 .dmk-drawer{position:fixed;top:0;right:0;width:min(600px,94vw);height:100vh;height:100dvh;
-  background:var(--dmk-paper);border-left:1px solid var(--dmk-line);pointer-events:auto;
-  display:flex;flex-direction:column;transform:translateX(100%);transition:transform .24s ease;
+  background:var(--dmk-paper);border-left:1px solid var(--dmk-line);
+  visibility:hidden;pointer-events:none;
+  display:flex;flex-direction:column;transform:translateX(100%);
+  transition:transform .24s ease,visibility .24s;
   box-shadow:-6px 0 28px rgba(0,0,0,.22)}
-.dmk-drawer.dmk-on{transform:translateX(0)}
+.dmk-drawer.dmk-on{transform:translateX(0);visibility:visible;pointer-events:auto}
 @media (prefers-reduced-motion:reduce){.dmk-drawer,.dmk-scrim{transition:none}}
 
 .dmk-hd{padding:10px 14px 8px;border-bottom:1px solid var(--dmk-line);background:var(--dmk-paper2)}
