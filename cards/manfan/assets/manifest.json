@@ -1,0 +1,9 @@
+{
+  "版本": 1,
+  "portrait": {},
+  "cg": {},
+  "map": {
+    "world": "map/world.webp",
+    "maze": "map/maze.webp"
+  }
+}
