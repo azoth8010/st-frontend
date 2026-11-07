@@ -1,5 +1,5 @@
 // ============================================================
-// 迷宫饭 · 抽屉外壳（胶囊 → 右侧抽屉，4 个一级页）
+// 迷宫饭 · 图鉴外壳（胶囊 → 居中卡片，4 个一级页）
 //
 // 设计见 04-Toolkit/前端平台/信息架构.md
 // 约束（sillytavern-embedded-ui）：
@@ -12,7 +12,9 @@
 // 数据全部来自 adapter.js（只读桥）。本文件不出现任何 MVU 路径字符串。
 // ============================================================
 
-import { 读状态, 格式化时刻, 格式化位置, 深度名 } from '../../adapter.js';
+import { 格式化时刻, 格式化位置, 深度名 } from '../../adapter.js';
+import { 样式Token } from '../_shared/tokens.js';
+import * as 交互 from '../_shared/interaction.js';
 import { 地图配置, 取图地址 } from '../../map-config.js';
 
 const 根ID = 'dmk-root';
@@ -28,89 +30,167 @@ const 页面表 = [
 ];
 
 const 样式 = `
+
+/* ===== 布局：居中卡片，不做位移动画 ===== */
 #${根ID}{position:fixed;inset:0;z-index:2147483640;pointer-events:none;
-  --dmk-paper:#f3e8d2;--dmk-paper2:#e8d9bd;--dmk-ink:#2e2519;--dmk-ink2:#6b5a42;
-  --dmk-line:#c8b795;--dmk-accent:#8c5a2b;--dmk-warn:#a33a2a;--dmk-ok:#4a6b3a;
-  font-family:-apple-system,"Noto Sans SC","Microsoft YaHei",sans-serif;
+  font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
   -webkit-font-smoothing:antialiased}
 #${根ID} *{box-sizing:border-box;min-width:0}
-#${胶囊ID}{position:fixed;width:36px;height:36px;border-radius:50%;pointer-events:auto;
-  background:rgba(46,37,25,.55);border:1px solid rgba(243,232,210,.45);color:#f3e8d2;
-  display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;
+#${胶囊ID}{position:fixed;width:44px;height:44px;border-radius:50%;pointer-events:auto;
+  background:rgba(53,39,34,.62);border:1px solid rgba(249,241,223,.5);color:#f9f1df;
+  display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;
   cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;
-  box-shadow:0 2px 10px rgba(0,0,0,.35);backdrop-filter:blur(2px);transition:opacity .18s}
+  box-shadow:var(--sh-1);transition:opacity 120ms ease}
 #${胶囊ID}:active{cursor:grabbing}
-#${胶囊ID}:hover{opacity:.92}
-.dmk-scrim{position:fixed;inset:0;background:rgba(20,16,11,.34);pointer-events:none;
-  opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+#${胶囊ID}:hover{opacity:.85}
+.dmk-scrim{position:fixed;inset:0;background:var(--scrim);pointer-events:none;
+  opacity:0;visibility:hidden;transition:opacity 120ms ease,visibility 120ms}
 .dmk-scrim.dmk-on{opacity:1;visibility:visible;pointer-events:auto}
-.dmk-drawer{position:fixed;top:0;right:0;width:min(600px,94vw);height:100vh;height:100dvh;
-  background:var(--dmk-paper);border-left:1px solid var(--dmk-line);pointer-events:none;
-  display:flex;flex-direction:column;transform:translateX(100%);transition:transform .24s ease;
-  box-shadow:-6px 0 28px rgba(0,0,0,.22)}
-.dmk-drawer.dmk-on{transform:translateX(0);pointer-events:auto}
+
+.dmk-drawer{position:fixed;top:50%;left:50%;
+  width:min(920px,calc(100vw - 48px));height:min(820px,100vh);height:min(820px,100dvh);
+  background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-lg);
+  display:flex;flex-direction:column;overflow:hidden;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transform:translate(-50%,-50%) scale(.985);
+  transition:opacity 120ms ease,transform 120ms ease,visibility 120ms;
+  box-shadow:var(--sh-5)}
+.dmk-drawer.dmk-on{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
 @media (prefers-reduced-motion:reduce){.dmk-drawer,.dmk-scrim{transition:none}}
 
-.dmk-hd{padding:10px 14px 8px;border-bottom:1px solid var(--dmk-line);background:var(--dmk-paper2)}
-.dmk-hd1{display:flex;align-items:center;gap:8px}
-.dmk-loc{font-size:12px;color:var(--dmk-ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dmk-gear{width:30px;height:30px;border:1px solid var(--dmk-line);background:transparent;
-  border-radius:6px;color:var(--dmk-ink2);cursor:pointer;font-size:14px;flex-shrink:0}
-.dmk-gear:hover{border-color:var(--dmk-accent);color:var(--dmk-accent)}
-.dmk-meters{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}
-.dmk-meter{flex:1 1 96px;min-width:88px}
-.dmk-meter .lab{font-size:10.5px;color:var(--dmk-ink2);display:flex;justify-content:space-between}
-.dmk-bar{height:5px;border-radius:3px;background:rgba(46,37,25,.13);overflow:hidden;margin-top:3px}
-.dmk-bar i{display:block;height:100%;border-radius:3px;background:var(--dmk-accent)}
-.dmk-bar.dmk-hp i{background:var(--dmk-warn)}
-.dmk-bar.dmk-mp i{background:#4a6b9a}
+/* 纸纹：只做一层，不叠分离机制 */
+.dmk-drawer::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(700px 420px at 18% 8%,rgba(255,255,255,.22),transparent 70%)}
+.dmk-drawer>*{position:relative;z-index:1}
 
-.dmk-tabs{display:flex;border-bottom:1px solid var(--dmk-line);background:var(--dmk-paper2)}
-.dmk-tab{flex:1;padding:9px 4px;border:0;background:transparent;color:var(--dmk-ink2);
-  font-size:13px;cursor:pointer;border-bottom:2px solid transparent}
-.dmk-tab[aria-selected="true"]{color:var(--dmk-ink);font-weight:600;border-bottom-color:var(--dmk-accent)}
-.dmk-subs{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;border-bottom:1px solid var(--dmk-line)}
-.dmk-sub{flex:0 0 auto;padding:4px 11px;border-radius:14px;border:1px solid var(--dmk-line);
-  background:transparent;color:var(--dmk-ink2);font-size:12px;cursor:pointer}
-.dmk-sub[aria-selected="true"]{background:var(--dmk-accent);border-color:var(--dmk-accent);color:#fdf6e8}
+/* ===== 页眉 ===== */
+.dmk-hd{padding:var(--s-4) var(--s-6) var(--s-3);border-bottom:1px solid var(--border);
+  background:var(--surface-raised);flex:0 0 auto}
+.dmk-hd1{display:flex;align-items:flex-start;gap:var(--s-3)}
+.dmk-hd-title{flex:1;min-width:0}
+.dmk-hd-title h1{margin:0;font:600 20px/1.3 var(--serif);letter-spacing:2px;color:var(--text-primary)}
+.dmk-hd-meta{margin:var(--s-1) 0 0;font-size:12px;line-height:1.6;color:var(--text-secondary);
+  border:0;background:none}
+.dmk-epigraph{margin:var(--s-2) 0 0;padding:0 0 var(--s-2);font:12px/1.7 var(--serif);
+  color:var(--text-tertiary);border-bottom:1px solid var(--border)}
+.dmk-epigraph:empty{display:none}
+.dmk-gear,.dmk-close{width:32px;height:32px;flex:0 0 auto;border:1px solid var(--border-strong);
+  border-radius:var(--r-md);background:transparent;color:var(--text-secondary);
+  font-size:15px;cursor:pointer;line-height:1}
+.dmk-gear:hover,.dmk-close:hover{border-color:var(--danger);color:var(--danger)}
+.dmk-meters{display:flex;gap:var(--s-3);margin-top:var(--s-3);flex-wrap:wrap}
+.dmk-meter{flex:1 1 120px;min-width:110px}
+.dmk-meter .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary)}
+.dmk-meter .lab b{font-weight:600;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.dmk-bar{height:4px;margin-top:var(--s-1);background:var(--paper-deep);overflow:hidden}
+.dmk-bar i{display:block;height:100%;background:var(--action)}
+.dmk-bar.dmk-hp i{background:var(--hp)} .dmk-bar.dmk-mp i{background:var(--mp)}
+.dmk-bar.dmk-jade i{background:var(--success)}
 
-.dmk-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 22px}
-.dmk-sec{margin:0 0 16px}
-.dmk-sec h3{margin:0 0 7px;font-size:11.5px;font-weight:600;color:var(--dmk-ink2);letter-spacing:1px}
-.dmk-row{display:flex;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(200,183,149,.55);font-size:13px}
+/* ===== 页签 ===== */
+.dmk-tabs{display:flex;border-bottom:1px solid var(--border-strong);
+  background:var(--surface-raised);flex:0 0 auto}
+.dmk-tab{flex:1;padding:var(--s-3) var(--s-1);border:0;background:transparent;cursor:pointer;
+  font-size:14px;color:var(--text-secondary);position:relative}
+.dmk-tab[aria-selected="true"]{color:var(--text-primary);font-weight:600}
+.dmk-tab[aria-selected="true"]::after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;
+  height:2px;background:var(--action)}
+.dmk-subs{display:flex;gap:var(--s-2);padding:var(--s-2) var(--s-6);overflow-x:auto;
+  border-bottom:1px solid var(--border);flex:0 0 auto}
+.dmk-sub{flex:0 0 auto;padding:var(--s-1) var(--s-3);border:1px solid var(--border-strong);
+  border-radius:var(--r-sm);background:transparent;color:var(--text-secondary);
+  font-size:12px;cursor:pointer}
+.dmk-sub[aria-selected="true"]{background:var(--action);border-color:var(--action);color:var(--text-on-action)}
+.dmk-body{flex:1;overflow-y:auto;padding:var(--s-4) var(--s-6) var(--s-6);
+  scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+
+/* ===== 内容 ===== */
+.dmk-sec{margin:0 0 var(--s-4)}
+.dmk-sec h3{margin:0 0 var(--s-2);font-size:12px;font-weight:600;color:var(--text-secondary);
+  letter-spacing:1px;border-bottom:1px solid var(--border);padding-bottom:var(--s-1)}
+.dmk-row{display:flex;gap:var(--s-3);padding:var(--s-2) 0;
+  border-bottom:1px dashed var(--border);font-size:14px}
 .dmk-row:last-child{border-bottom:0}
-.dmk-row .k{flex:0 0 68px;color:var(--dmk-ink2);font-size:12px}
-.dmk-row .v{flex:1;color:var(--dmk-ink);word-break:break-word}
-.dmk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px}
-.dmk-cell{background:rgba(255,255,255,.45);border:1px solid var(--dmk-line);border-radius:7px;
-  padding:6px 8px;text-align:center}
-.dmk-cell .n{font-size:10.5px;color:var(--dmk-ink2)}
-.dmk-cell .q{font-size:15px;font-weight:600;color:var(--dmk-ink);margin-top:1px}
-.dmk-tag{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;
-  border:1px solid var(--dmk-line);color:var(--dmk-ink2);margin:0 4px 4px 0}
-.dmk-empty{padding:26px 8px;text-align:center;color:var(--dmk-ink2);font-size:12.5px;line-height:1.8}
-.dmk-avatar{width:34px;height:34px;border-radius:50%;background:var(--dmk-accent);color:#fdf6e8;
-  display:flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto}
-.dmk-who{display:flex;gap:9px;padding:7px 0;border-bottom:1px dashed rgba(200,183,149,.55)}
+.dmk-row .k{flex:0 0 78px;color:var(--text-secondary);font-size:12px}
+.dmk-row .v{flex:1;color:var(--text-primary);word-break:break-word;line-height:1.7}
+.dmk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:var(--s-2)}
+.dmk-cell{background:var(--surface-raised);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:var(--s-2);text-align:center}
+.dmk-cell .n{font-size:12px;color:var(--text-secondary)}
+.dmk-cell .q{font-size:16px;font-weight:600;color:var(--text-primary);margin-top:var(--s-1)}
+.dmk-tag{display:inline-block;padding:1px var(--s-2);border:1px solid var(--border-strong);
+  border-radius:var(--r-sm);font-size:12px;color:var(--text-secondary);margin:var(--s-1) var(--s-1) 0 0}
+.dmk-empty{padding:var(--s-8) var(--s-2);text-align:center;
+  color:var(--text-secondary);font-size:14px;line-height:1.8}
+.dmk-avatar{width:64px;height:64px;flex:0 0 auto;border-radius:var(--r-md);
+  background:var(--action);color:var(--text-on-action);
+  display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;
+  border:2px solid var(--border-strong)}
+.dmk-who{display:flex;gap:var(--s-3);padding:var(--s-2) 0;border-bottom:1px dashed var(--border)}
 .dmk-who .info{flex:1;min-width:0}
-.dmk-who .nm{font-size:13px;color:var(--dmk-ink);display:flex;gap:6px;align-items:baseline}
-.dmk-who .nm small{font-size:10.5px;color:var(--dmk-ink2)}
-.dmk-who .rel{font-size:11.5px;color:var(--dmk-ink2);margin-top:2px;word-break:break-word}
-.dmk-mapwrap{position:relative;width:100%;background:#1b1610;border:1px solid var(--dmk-line);border-radius:6px;overflow:hidden}
+.dmk-who .nm{font-size:14px;color:var(--text-primary);display:flex;gap:var(--s-2);align-items:baseline}
+.dmk-who .nm small{font-size:12px;color:var(--action)}
+.dmk-who .rel{font-size:12px;color:var(--text-secondary);margin-top:var(--s-1);word-break:break-word}
+
+/* ===== 地图 ===== */
+.dmk-mapwrap{position:relative;width:100%;background:#241d15;
+  border:1px solid var(--border-strong);border-radius:var(--r-sm);overflow:hidden}
 .dmk-mapwrap img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none}
-.dmk-node{position:absolute;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;
-  background:rgba(243,232,210,.55);border:1.5px solid rgba(46,37,25,.65);pointer-events:none}
-.dmk-node.dmk-here{width:15px;height:15px;background:#f2d27a;border-color:#fff;
-  box-shadow:0 0 0 3px rgba(242,210,122,.32),0 0 14px rgba(242,210,122,.75)}
-.dmk-band{position:absolute;left:0;right:0;background:rgba(243,232,210,.14);
-  border-top:1px solid rgba(243,232,210,.65);border-bottom:1px solid rgba(243,232,210,.65);pointer-events:none}
-.dmk-maptabs{display:flex;gap:6px;margin-bottom:8px}
-.dmk-diag{padding:14px;font-size:12px;color:var(--dmk-warn);line-height:1.8}
-.dmk-set{position:absolute;inset:0;background:var(--dmk-paper);z-index:2;display:flex;flex-direction:column}
-.dmk-set .dmk-hd{display:flex;align-items:center;gap:8px}
-.dmk-btn{padding:6px 12px;border-radius:6px;border:1px solid var(--dmk-line);background:transparent;
-  color:var(--dmk-ink);font-size:12.5px;cursor:pointer}
-.dmk-btn:hover{border-color:var(--dmk-accent);color:var(--dmk-accent)}
+.dmk-node{position:absolute;transform:translate(-50%,-50%);width:44px;height:44px;
+  border:0;background:transparent;cursor:pointer;padding:0}
+.dmk-node::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:11px;height:11px;border-radius:50%;background:var(--paper-raised);
+  border:1.5px solid var(--text-primary);transition:transform 120ms ease}
+.dmk-node:hover::after,.dmk-node:focus-visible::after{transform:translate(-50%,-50%) scale(1.5)}
+.dmk-node.dmk-here::after{width:15px;height:15px;background:#f2d27a;
+  box-shadow:0 0 0 4px rgba(242,210,122,.3)}
+.dmk-band{position:absolute;left:0;right:0;width:100%;border:0;cursor:pointer;
+  background:rgba(249,241,223,.13);border-top:1px solid rgba(249,241,223,.6);
+  border-bottom:1px solid rgba(249,241,223,.6);padding:0}
+.dmk-band.dmk-here{background:rgba(242,210,122,.22)}
+.dmk-band:hover{background:rgba(249,241,223,.25)}
+.dmk-maptabs{display:flex;gap:var(--s-2);margin-bottom:var(--s-3)}
+.dmk-diag{padding:var(--s-3);font-size:12px;color:var(--danger);line-height:1.8}
+.dmk-detail{margin-top:var(--s-3);padding:var(--s-3);border:1px solid var(--border-strong);
+  background:var(--surface-raised);border-radius:var(--r-sm);font-size:14px;line-height:1.8}
+.dmk-detail h3{margin:0 0 var(--s-1);font:600 16px var(--serif);color:var(--text-primary)}
+.dmk-btn{padding:var(--s-2) var(--s-3);border:1px solid var(--action);border-radius:var(--r-sm);
+  background:transparent;color:var(--action);font-size:12px;cursor:pointer}
+.dmk-btn:hover{background:var(--action);color:var(--text-on-action)}
+.dmk-btn.dmk-primary{background:var(--action);color:var(--text-on-action)}
+
+/* ===== 灶台 ===== */
+.dmk-cook{display:grid;gap:var(--s-3)}
+.dmk-field label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:var(--s-1)}
+.dmk-field select,.dmk-field input{width:100%;padding:var(--s-2);font-size:14px;
+  border:1px solid var(--border-strong);border-radius:var(--r-sm);
+  background:var(--surface-raised);color:var(--text-primary)}
+.dmk-cook-preview{padding:var(--s-3);background:var(--surface-raised);
+  border-left:3px solid var(--action);border-radius:var(--r-sm);
+  font-size:14px;line-height:1.8;color:var(--text-primary);word-break:break-word}
+.dmk-cook-empty{color:var(--text-secondary);font-size:14px}
+
+/* ===== 设置 ===== */
+.dmk-set{position:absolute;inset:0;z-index:3;background:var(--surface);
+  display:none;flex-direction:column}
+.dmk-set.dmk-on{display:flex}
+.dmk-set .dmk-hd{display:flex;align-items:center;gap:var(--s-2)}
+.dmk-switch{width:44px;height:24px;border-radius:12px;border:1px solid var(--border-strong);
+  background:var(--paper-deep);position:relative;cursor:pointer;flex:0 0 auto;padding:0}
+.dmk-switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;
+  border-radius:50%;background:var(--surface-raised);transition:left 120ms ease}
+.dmk-switch.dmk-on{background:var(--success)} .dmk-switch.dmk-on::after{left:22px}
+.dmk-ft{padding:var(--s-2) var(--s-6);border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;font-size:12px;color:var(--text-tertiary);
+  background:var(--surface-raised);flex:0 0 auto}
+
+@media(max-width:640px){
+  .dmk-hd{padding:var(--s-3) var(--s-4) var(--s-2)}
+  .dmk-hd-title h1{font-size:18px}
+  .dmk-subs,.dmk-body{padding-left:var(--s-4);padding-right:var(--s-4)}
+  .dmk-ft{padding-left:var(--s-4);padding-right:var(--s-4)}
+  .dmk-meter{flex:1 1 45%}
+}
 `;
 
 let 单例 = null;
@@ -172,7 +252,7 @@ export function 挂载() {
   const root = 元素('div');
   root.id = 根ID;
   const style = 元素('style');
-  style.textContent = 样式;
+  style.textContent = 样式Token + "\n" + 样式;
   root.appendChild(style);
 
   /* 胶囊 */
@@ -193,14 +273,23 @@ export function 挂载() {
 
   const hd = 元素('div', 'dmk-hd');
   const hd1 = 元素('div', 'dmk-hd1');
-  const loc = 元素('div', 'dmk-loc');
+  const hdTitle = 元素('div', 'dmk-hd-title');
+  hdTitle.appendChild(元素('h1', null, '迷宫饭 · 冒险图鉴'));
+  const meta = 元素('div', 'dmk-hd-meta');
+  const epigraph = 元素('div', 'dmk-epigraph');
   const gear = 元素('button', 'dmk-gear', '⚙');
   gear.title = '设置';
   gear.setAttribute('aria-label', '设置');
-  hd1.appendChild(loc);
+  const close = 元素('button', 'dmk-close', '×');
+  close.title = '关闭';
+  close.setAttribute('aria-label', '关闭图鉴');
+  hd1.appendChild(hdTitle);
   hd1.appendChild(gear);
+  hd1.appendChild(close);
   const meters = 元素('div', 'dmk-meters');
   hd.appendChild(hd1);
+  hd.appendChild(meta);
+  hd.appendChild(epigraph);
   hd.appendChild(meters);
 
   const tabs = 元素('div', 'dmk-tabs');
@@ -208,15 +297,20 @@ export function 挂载() {
   const subs = 元素('div', 'dmk-subs');
   const body = 元素('div', 'dmk-body');
 
+  const ft = 元素('div', 'dmk-ft');
+  ft.appendChild(元素('span', null, '迷宫饭 · 图鉴'));
+  ft.appendChild(元素('span', null, 'v0.2'));
   抽屉节点.appendChild(hd);
   抽屉节点.appendChild(tabs);
   抽屉节点.appendChild(subs);
   抽屉节点.appendChild(body);
+  抽屉节点.appendChild(ft);
 
   doc.body.appendChild(root);
 
   const 状态 = {
-    开: false, 页: 读记忆页() || '角色', 子: {}, 滚: 0,
+    开: false, 页: 读记忆页() || '角色', 子: {}, 滚: 0, 骰子: true,
+    地图视图: '世界', 灶台主材: '', 灶台辅材: '', 灶台做法: '',
   };
   页面表.forEach(function (p) { if (p.子) 状态.子[p.键] = p.子[0]; });
 
@@ -270,14 +364,16 @@ export function 挂载() {
   }
 
   scrim.addEventListener('click', function () { 开合(false); });
+  close.addEventListener('click', function () { 开合(false); });
   doc.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && 状态.开) { e.stopPropagation(); 开合(false); }
   });
 
   /* ---- 顶部数值 ---- */
   function 渲染头部(s) {
-    清空(loc);
-    loc.textContent = 格式化位置(s.世界) + (s.世界.天气 ? ' · ' + s.世界.天气 : '');
+    meta.textContent = 格式化时刻(s.世界.时刻) + '　' + 格式化位置(s.世界)
+      + (s.世界.天气 ? '　·　' + s.世界.天气 : '');
+    epigraph.textContent = s.GM锐评 || '';
     清空(meters);
     const 血 = s.玩家.生命;
     meters.appendChild(条('HP', 血.当前HP, 血.最大HP, 'dmk-hp'));
@@ -334,7 +430,7 @@ export function 挂载() {
 
   /* ---- 页面 ---- */
   function 渲染() {
-    const s = 读状态();
+    const s = 交互.读();
     渲染头部(s);
     渲染页签();
     const 当前 = 页面表.filter(function (p) { return p.键 === 状态.页; })[0] || 页面表[0];
@@ -575,15 +671,15 @@ export function 挂载() {
     return '未触及';
   }
 
-  /* ---- 地图 ---- */
+  /* ---- 地图：点击 → 详情板 → 填进输入框 ---- */
   function 页地图(s) {
     const 视图 = 状态.地图视图 || '世界';
     const bar = 元素('div', 'dmk-maptabs');
     ['世界', '迷宫'].forEach(function (v) {
-      const b = 元素('button', 'dmk-sub', v === '世界' ? '世界图' : '迷宫剖面');
-      b.setAttribute('aria-selected', String(视图 === v));
-      b.addEventListener('click', function () { 状态.地图视图 = v; 渲染(); });
-      bar.appendChild(b);
+      const btn = 元素('button', 'dmk-sub', v === '世界' ? '世界图' : '迷宫剖面');
+      btn.setAttribute('aria-selected', String(视图 === v));
+      btn.addEventListener('click', function () { 状态.地图视图 = v; 渲染(); });
+      bar.appendChild(btn);
     });
     body.appendChild(bar);
 
@@ -596,85 +692,182 @@ export function 挂载() {
     img.addEventListener('error', function () {
       镜像 += 1;
       if (镜像 < 2) { img.src = 取图地址(图.路径, 镜像); return; }
-      wrap.removeChild(img);
-      wrap.appendChild(元素('div', 'dmk-diag', '底图加载失败。检查网络，或把镜像切到 cdn.jsdelivr.net。'));
+      if (img.parentNode) wrap.removeChild(img);
+      wrap.appendChild(元素('div', 'dmk-diag', '底图加载失败。检查网络，或在设置里切换镜像。'));
     });
     img.src = 取图地址(图.路径, 0);
     wrap.appendChild(img);
 
+    const 详情 = 元素('div', 'dmk-detail');
+    详情.appendChild(元素('div', 'dmk-cook-empty', '点图上的标记，查看该处详情。'));
+    function 显示详情(名, 说明) {
+      清空(详情);
+      详情.appendChild(元素('h3', null, 名));
+      详情.appendChild(元素('div', null, 说明 || ''));
+      const 去 = 元素('button', 'dmk-btn dmk-primary', '前往此处 →');
+      去.setAttribute('aria-label', '把前往' + 名 + '填进输入框');
+      交互.可点按(去, function () {
+        if (!交互.防重复('前往:' + 名, 800)) return;
+        交互.写入输入框(交互.前往输入(名), { 提示: '已把「前往' + 名 + '」填进输入框，检查后按发送' });
+      });
+      详情.appendChild(去);
+    }
+
     if (视图 === '世界') {
       const 当前 = s.世界.位置.大区域;
       地图配置.世界.节点.forEach(function (n) {
-        const dot = 元素('div', 'dmk-node' + (n.id === 当前 ? ' dmk-here' : ''));
+        const dot = 元素('button', 'dmk-node' + (n.id === 当前 ? ' dmk-here' : ''));
         dot.style.left = n.x + '%';
         dot.style.top = n.y + '%';
         dot.title = n.id;
+        dot.setAttribute('aria-label', n.id);
+        交互.可点按(dot, function () { 显示详情(n.id, n.注); });
         wrap.appendChild(dot);
       });
     } else {
-      const 层 = 层带按深度(s.世界.深度);
-      if (层) {
-        const band = 元素('div', 'dmk-band');
-        band.style.top = 层.y0 + '%';
-        band.style.height = (层.y1 - 层.y0) + '%';
-        wrap.appendChild(band);
-      }
+      地图配置.迷宫.层带.forEach(function (band) {
+        const el = 元素('button', 'dmk-band' + (band.深度 === s.世界.深度 ? ' dmk-here' : ''));
+        el.style.top = band.y0 + '%';
+        el.style.height = (band.y1 - band.y0) + '%';
+        el.setAttribute('aria-label', band.名);
+        交互.可点按(el, function () {
+          显示详情(band.名, '对应深度：' + String(band.深度));
+        });
+        wrap.appendChild(el);
+      });
     }
     body.appendChild(wrap);
+    body.appendChild(详情);
 
     const cap = 元素('div', 'dmk-empty', 视图 === '世界'
       ? '当前：' + (s.世界.位置.大区域 || '未定') + (s.世界.位置.小地点 ? '·' + s.世界.位置.小地点 : '')
       : '当前：' + (深度名[s.世界.深度] || '地面') + (s.世界.位置.小地点 ? '·' + s.世界.位置.小地点 : ''));
     body.appendChild(cap);
-
-    const 传说 = 元素('div', 'dmk-sec');
-    const tags = 元素('div');
-    (视图 === '世界' ? 地图配置.世界.节点.map(function (n) { return n.id; })
-      : 地图配置.迷宫.层带.map(function (b) { return b.名; })).forEach(function (name) {
-      tags.appendChild(元素('span', 'dmk-tag', name));
-    });
-    传说.appendChild(tags);
-    body.appendChild(传说);
   }
 
-  function 层带按深度(深度) {
-    const 表 = 地图配置.迷宫.层带;
-    for (let i = 0; i < 表.length; i++) if (表[i].深度 === 深度) return 表[i];
-    return null;
-  }
+  /* ---- 料理：读背包 → 选料 → 填进输入框（不写变量） ---- */
+  const 做法表 = ['煮', '烤', '煎', '炸', '熏', '炖', '凉拌', '生食'];
 
-  /* ---- 料理（占位） ---- */
   function 页料理(子, s) {
     const 图 = s.料理.图鉴;
     if (子 === '图鉴') {
       const 原 = Object.keys(图.原作).length;
       const 创 = Object.keys(图.原创).length;
-      const a = 节('原作 · ' + 原 + ' / 17');
-      if (!原) a.appendChild(元素('div', 'dmk-empty', '还没做过原作菜'));
+      const sec1 = 节('原作 · ' + 原 + ' / 17');
+      if (!原) sec1.appendChild(元素('div', 'dmk-empty', '还没做过原作菜。第一次做成会自动入册。'));
       else Object.keys(图.原作).forEach(function (k) {
         const it = 图.原作[k] || {};
-        a.appendChild(行(k, '最佳 ' + (it.best || 1) + '★　做过 ' + (it.times || 0) + ' 次'));
+        sec1.appendChild(行(k, '最佳 ' + (it.best || 1) + '★　做过 ' + (it.times || 0) + ' 次'
+          + (it.firstDate ? '　首次 ' + it.firstDate : '')));
       });
-      body.appendChild(a);
-      const b = 节('原创 · ' + 创);
-      if (!创) b.appendChild(元素('div', 'dmk-empty', '还没有自创菜'));
+      body.appendChild(sec1);
+      const sec2 = 节('原创 · ' + 创);
+      if (!创) sec2.appendChild(元素('div', 'dmk-empty', '还没有自创菜。表外组合会自动建档。'));
       else Object.keys(图.原创).forEach(function (k) {
         const it = 图.原创[k] || {};
-        b.appendChild(行(k, (it.配方 && it.配方.主材 ? it.配方.主材 + '·' + it.配方.做法 : '') + '　做过 ' + (it.times || 0) + ' 次'));
+        sec2.appendChild(行(k, (it.配方 && it.配方.主材 ? it.配方.主材 + ' · ' + it.配方.做法 : '')
+          + '　做过 ' + (it.times || 0) + ' 次'));
       });
-      body.appendChild(b);
+      body.appendChild(sec2);
       return;
     }
-    body.appendChild(元素('div', 'dmk-empty', '料理台图形界面稍后接入。\n这一页会放灶台与食材，数据已经在 MVU 里。'));
+
+    const 食材 = Object.keys(s.玩家.背包).filter(function (k) {
+      const it = s.玩家.背包[k];
+      return it && it.type === '食材' && Number(it.qty) > 0;
+    });
+
+    if (子 === '食材') {
+      const sec = 节('背包里的食材 · ' + 食材.length);
+      if (!食材.length) {
+        sec.appendChild(元素('div', 'dmk-empty', '背包里没有食材。先去迷宫找点能吃的。'));
+      } else {
+        食材.forEach(function (k) {
+          const it = s.玩家.背包[k];
+          sec.appendChild(行(k, '×' + it.qty + (it.说明 ? '　' + it.说明 : '')));
+        });
+      }
+      body.appendChild(sec);
+      return;
+    }
+
+    /* 灶台 */
+    const sec = 节('灶台');
+    if (!食材.length) {
+      sec.appendChild(元素('div', 'dmk-empty', '背包里没有食材，做不了菜。\n去食材页看看，或先在迷宫里找点东西。'));
+      body.appendChild(sec);
+      return;
+    }
+
+    const form = 元素('div', 'dmk-cook');
+    function 下拉(标签, 项, 值) {
+      const f = 元素('div', 'dmk-field');
+      const lab = 元素('label', null, 标签);
+      const sel = 元素('select');
+      sel.setAttribute('aria-label', 标签);
+      项.forEach(function (x) {
+        const o = 元素('option', null, x);
+        o.value = x;
+        sel.appendChild(o);
+      });
+      sel.value = 值 || 项[0] || '';
+      f.appendChild(lab);
+      f.appendChild(sel);
+      form.appendChild(f);
+      return sel;
+    }
+    const 主材 = 下拉('主材', 食材, 状态.灶台主材 || 食材[0]);
+    const 辅材 = 下拉('辅材（可选）', ['无'].concat(食材), 状态.灶台辅材 || '无');
+    const 做法 = 下拉('做法', 做法表, 状态.灶台做法 || '煮');
+    const 预览 = 元素('div', 'dmk-cook-preview');
+    const 发送 = 元素('button', 'dmk-btn dmk-primary', '填进输入框 →');
+    发送.setAttribute('aria-label', '把这次做菜写进玩家输入框');
+
+    function 当前消耗() {
+      const 耗 = Object.create(null);
+      const m = 主材.value;
+      if (m) 耗[m] = 1;
+      const s2 = 辅材.value;
+      if (s2 && s2 !== '无') 耗[s2] = (耗[s2] || 0) + 1;
+      return 耗;
+    }
+    function 刷新预览() {
+      状态.灶台主材 = 主材.value;
+      状态.灶台辅材 = 辅材.value;
+      状态.灶台做法 = 做法.value;
+      const 文本 = 交互.料理输入({
+        主材: 主材.value, 辅材: 辅材.value === '无' ? [] : [辅材.value],
+        做法: 做法.value, 消耗: 当前消耗(),
+      });
+      预览.textContent = 文本 || '选好主材与做法后，这里会显示将要发送的话。';
+      发送.disabled = !文本;
+      return 文本;
+    }
+    [主材, 辅材, 做法].forEach(function (sel) { sel.addEventListener('change', 刷新预览); });
+    刷新预览();
+
+    交互.可点按(发送, function () {
+      const 文本 = 刷新预览();
+      if (!文本) return;
+      if (!交互.防重复('做菜:' + 文本, 800)) return;
+      交互.写入输入框(文本, { 提示: '已填进输入框。发出后由 AI 结算扣料、饱食与图鉴。' });
+    });
+
+    form.appendChild(预览);
+    form.appendChild(发送);
+    const 提示 = 元素('div', 'dmk-empty', '这里只把选择写成一句话，不改任何变量。扣料、饱食、图鉴由 AI 在变量更新里结算。');
+    form.appendChild(提示);
+    sec.appendChild(form);
+    body.appendChild(sec);
   }
 
   /* ---- 设置 ---- */
   let 设置层 = null;
   gear.addEventListener('click', function () {
     if (设置层) { 关设置(); return; }
-    设置层 = 元素('div', 'dmk-set');
+    设置层 = 元素('div', 'dmk-set dmk-on');
     const hd2 = 元素('div', 'dmk-hd');
-    const t = 元素('div', 'dmk-loc', '设置');
+    const t = 元素('div', 'dmk-hd-title', '设置');
     const close = 元素('button', 'dmk-btn', '返回');
     close.addEventListener('click', 关设置);
     hd2.appendChild(t);
@@ -683,8 +876,21 @@ export function 挂载() {
     b.appendChild(行('图床镜像', 'testingcf.jsdelivr.net'));
     b.appendChild(行('备用镜像', 'cdn.jsdelivr.net'));
     b.appendChild(行('数据来源', 'MVU stat_data（只读）'));
-    b.appendChild(行('版本', '0.1.0 · 骨架'));
-    b.appendChild(元素('div', 'dmk-empty', '骰子开关、清缓存、更新检查稍后接入。'));
+    const 开关 = 元素('button', 'dmk-switch' + (状态.骰子 ? ' dmk-on' : ''));
+    开关.setAttribute('aria-label', '骰子开关');
+    开关.setAttribute('aria-pressed', String(!!状态.骰子));
+    交互.可点按(开关, function () {
+      状态.骰子 = !状态.骰子;
+      开关.classList.toggle('dmk-on', 状态.骰子);
+      开关.setAttribute('aria-pressed', String(状态.骰子));
+    });
+    const 行骰 = 元素('div', 'dmk-row');
+    行骰.appendChild(元素('div', 'k', '骰子'));
+    const v骰 = 元素('div', 'v');
+    v骰.appendChild(开关);
+    行骰.appendChild(v骰);
+    b.appendChild(行骰);
+    b.appendChild(行('版本', 'v0.2'));
     设置层.appendChild(hd2);
     设置层.appendChild(b);
     抽屉节点.appendChild(设置层);
@@ -694,27 +900,13 @@ export function 挂载() {
     设置层 = null;
   }
 
-  /* ---- 数据刷新 ---- */
-  function 订阅() {
-    try {
-      if (typeof eventOn === 'function' && window.tavern_events) {
-        if (window.tavern_events.MESSAGE_RECEIVED) eventOn(window.tavern_events.MESSAGE_RECEIVED, 刷新);
-        if (window.tavern_events.CHAT_CHANGED) eventOn(window.tavern_events.CHAT_CHANGED, 刷新);
-      }
-    } catch (e) { /* 事件不可用就只靠打开时刷新 */ }
-    try {
-      if (typeof Mvu !== 'undefined' && Mvu && Mvu.events && Mvu.events.VARIABLE_UPDATE_ENDED) {
-        eventOn(Mvu.events.VARIABLE_UPDATE_ENDED, 刷新);
-      }
-    } catch (e) { /* 同上 */ }
-  }
+  /* ---- 数据刷新：共享订阅，销毁时解绑 ---- */
+  const 取消订阅 = 交互.订阅刷新(刷新);
 
   function 刷新() {
     if (!状态.开) return;
     渲染();
   }
-
-  订阅();
 
   const api = {
     开: function () { 开合(true); },
@@ -723,6 +915,7 @@ export function 挂载() {
     刷新: 渲染,
     状态: 状态,
     销毁: function () {
+      try { 取消订阅(); } catch (e) { /* 忽略 */ }
       关设置();
       if (root.parentNode) root.parentNode.removeChild(root);
       try { delete win.__DMK_SHELL__; } catch (e) { win.__DMK_SHELL__ = undefined; }

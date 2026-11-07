@@ -83,3 +83,23 @@ https://cdn.jsdelivr.net/gh/azoth8010/st-frontend@<版本>/<路径>
 代码部分（`core/` `schema-kit/` `skins/` `cards/*/apps/` `cards/*/adapter.js`）采用 **MIT**，见 `LICENSE`。
 
 `cards/*/assets/` 下的同人图像**不在 MIT 范围内**：仅供本角色卡使用，不授予再分发权。角色形象版权归原作者所有。
+
+## 迷宫饭 · 前端现状（v0.2）
+
+```
+cards/manfan/
+├── adapter.js                 只读桥：所有 MVU 路径集中在此
+├── map-config.js              地图坐标与 CDN 镜像
+└── apps/
+    ├── _shared/
+    │   ├── tokens.js          设计令牌（由 04-Toolkit/前端平台/tokens.css 同步）
+    │   └── interaction.js     共享交互层：读 MVU / 点击 / 写输入框 / 订阅 / 防重复
+    └── shell/index.js         居中卡片外壳、4 个一级页、地图与料理交互
+```
+
+**共享交互层是地图与料理台共用的**：两者都只读 `stat_data`，点击后把结果
+**填进玩家输入框**（不覆盖已有文字、不自动发送），由 AI 结算变量。
+
+开发预览：`python -m http.server 8765 --directory <仓库根>` 后打开
+`http://127.0.0.1:8765/test/preview.html`（页面自带假数据，不写变量）。
+离线冒烟：`node test/smoke-shell.mjs`。

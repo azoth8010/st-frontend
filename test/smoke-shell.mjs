@@ -24,6 +24,8 @@ function 复制(源相对, 目标相对) {
 }
 复制('adapter.js', 'adapter.mjs');
 复制('map-config.js', 'map-config.mjs');
+复制(path.join('apps', '_shared', 'tokens.js'), path.join('apps', '_shared', 'tokens.mjs'));
+复制(path.join('apps', '_shared', 'interaction.js'), path.join('apps', '_shared', 'interaction.mjs'));
 复制(path.join('apps', 'shell', 'index.js'), path.join('apps', 'shell', 'index.mjs'));
 
 /* ---------- 最小 DOM 桩 ---------- */
@@ -72,13 +74,20 @@ function 遍历(root, 判断, 出) {
 
 const body = makeEl('body');
 const head = makeEl('head');
+const 输入框 = makeEl('textarea');
+输入框.id = 'send_textarea';
+输入框.value = '';
+body.appendChild(输入框);
 const doc = {
   readyState: 'complete', head, body,
   createElement: makeEl,
   getElementById(id) { return 遍历(body, (n) => n.id === id, [])[0] || null; },
   addEventListener(t, fn) { (doc._h = doc._h || {}), (doc._h[t] = doc._h[t] || []).push(fn); },
   removeEventListener() {},
-  querySelector() { return null; },
+  querySelector(sel) {
+    if (sel === '#send_textarea') return 输入框;
+    return 遍历(body, (n) => n.id === sel.slice(1), [])[0] || null;
+  },
 };
 
 /* ---------- 假 stat_data（就是 initvar 的形状） ---------- */
@@ -122,6 +131,7 @@ global.window = win;
 global.localStorage = win.localStorage;
 global.getVariables = () => ({ stat_data: stat });
 global.eventOn = () => ({ stop() {} });
+global.Event = class { constructor(t) { this.type = t; } };
 
 /* ---------- 加载模块 ---------- */
 const mod = await import(pathToFileURL(path.join(TMP, 'apps', 'shell', 'index.mjs')).href);
@@ -144,6 +154,11 @@ function 规则(选择器) {
   const j = 源码.indexOf('}', i);
   return 源码.slice(i, j);
 }
+/* 令牌单一真源：仓库内 tokens.js 必须与设计侧 tokens.css 完全一致 */
+const 设计侧令牌 = fs.readFileSync(path.join(ROOT, '..', '前端平台', 'tokens.css'), 'utf8');
+const 仓库侧令牌 = fs.readFileSync(path.join(TMP, 'apps', '_shared', 'tokens.mjs'), 'utf8');
+ok('令牌与 04-Toolkit/前端平台/tokens.css 一致', 仓库侧令牌.includes(设计侧令牌));
+
 const 遮罩默认 = 规则('.dmk-scrim');
 const 遮罩打开 = 规则('.dmk-scrim.dmk-on');
 const 抽屉默认 = 规则('.dmk-drawer');
@@ -203,10 +218,12 @@ const 图tab = 遍历(root, (n) => n.className === 'dmk-sub' && /迷宫/.test(n.
 图tab.click();
 const 图2 = 遍历(root, (n) => n.tagName === 'IMG', []);
 ok('迷宫 img 指向 maze.webp', String(图2[0].src).includes('maze.webp'), 图2[0].src);
-const 带 = 遍历(root, (n) => n.className === 'dmk-band', []);
-ok('深度 2 有层带高亮', 带.length === 1, 带.length);
-if (带[0]) {
-  ok('层带 top 约 11.56%', Math.abs(parseFloat(带[0].style.top) - 11.56) < 0.01, 带[0].style.top);
+const 带 = 遍历(root, (n) => String(n.className).includes('dmk-band'), []);
+ok('迷宫图 9 段层带都可点', 带.length === 9, 带.length);
+const 高亮带 = 带.filter((n) => String(n.className).includes('dmk-here'));
+ok('深度 2 只高亮第二段', 高亮带.length === 1, 高亮带.length);
+if (高亮带[0]) {
+  ok('高亮层带 top 约 11.56%', Math.abs(parseFloat(高亮带[0].style.top) - 11.56) < 0.01, 高亮带[0].style.top);
 }
 
 /* 编年 */
@@ -225,10 +242,60 @@ const 文3 = 全文(bodyEl);
 ok('关系页有在场', 文3.includes('此刻在场') && 文3.includes('森西'));
 ok('关系页有人物好感', 文3.includes('+35'));
 
-/* 料理 */
+/* 地图点击 → 详情 → 填进输入框 */
+tabs[1].click();
+const 地图tab = 遍历(root, (n) => n.className === 'dmk-sub' && /地图/.test(n.textContent), [])[0];
+地图tab.click();  // 前面切过「编年」，先回到地图
+const 世界图btn = 遍历(root, (n) => n.className === 'dmk-sub' && /世界图/.test(n.textContent), [])[0];
+世界图btn.click(); // 前面切过「迷宫」，先回到世界图
+const 节点 = 遍历(root, (n) => String(n.className).includes('dmk-node'), []);
+ok('世界图 8 个节点都是可点按钮', 节点.length === 8 && 节点.every((n) => n.tagName === 'BUTTON'), 节点.length);
+节点[0].click();
+const 文详情 = 全文(bodyEl);
+ok('点节点后出现详情板', 文详情.includes('前往此处') && 文详情.includes('寒带苔原'), 文详情.slice(0, 90));
+const 去按钮 = 遍历(root, (n) => n.tagName === 'BUTTON' && /前往此处/.test(n.textContent), [])[0];
+ok('详情板有前往按钮', !!去按钮);
+去按钮.click();
+ok('前往写进玩家输入框', 输入框.value.includes('前往'), 输入框.value);
+
+/* 料理灶台：读背包 → 预览 → 填进输入框 */
 tabs[3].click();
 const 文4 = 全文(bodyEl);
-ok('料理页默认是灶台占位', 文4.includes('稍后接入'));
+ok('灶台列出背包食材', 文4.includes('走路菇'));
+ok('预览含消耗清单', /走路菇×1/.test(文4), 文4.slice(0, 120));
+ok('预览标明只发送不改变量', 文4.includes('不改任何变量'));
+const 发送 = 遍历(root, (n) => n.tagName === 'BUTTON' && /填进输入框/.test(n.textContent), [])[0];
+ok('灶台有发送按钮', !!发送);
+发送.click();
+ok('做菜输入写进输入框', 输入框.value.includes('我用') && 输入框.value.includes('主材是走路菇'), 输入框.value);
+ok('输入框保留之前的文本', 输入框.value.includes('前往'), 输入框.value);
+
+/* 食材页空状态与图鉴 */
+const 食材tab = 遍历(root, (n) => n.className === 'dmk-sub' && /食材/.test(n.textContent), [])[0];
+食材tab.click();
+ok('食材页列出食材', 全文(bodyEl).includes('走路菇'));
+const 图鉴tab = 遍历(root, (n) => n.className === 'dmk-sub' && /图鉴/.test(n.textContent), [])[0];
+图鉴tab.click();
+ok('图鉴页显示首次日期', 全文(bodyEl).includes('514年3月1日'));
+
+/* 设置覆盖层 */
+const gear = 遍历(root, (n) => n.className === 'dmk-gear', [])[0];
+gear.click();
+const 设置层 = 遍历(root, (n) => String(n.className).includes('dmk-set'), []);
+ok('设置层打开且带 dmk-on', 设置层.length === 1 && String(设置层[0].className).includes('dmk-on'));
+const 开关 = 遍历(root, (n) => String(n.className).includes('dmk-switch'), [])[0];
+ok('设置层有骰子开关', !!开关);
+开关.click();
+ok('开关可切换 aria-pressed', 开关.getAttribute('aria-pressed') === 'false', 开关.getAttribute('aria-pressed'));
+const 返回 = 遍历(root, (n) => n.tagName === 'BUTTON' && n.textContent === '返回', [])[0];
+返回.click();
+
+/* 可见关闭按钮 */
+const 关闭钮 = 遍历(root, (n) => n.className === 'dmk-close', [])[0];
+ok('页眉有可见关闭按钮', !!关闭钮);
+关闭钮.click();
+ok('点关闭按钮收起面板', !drawer.classList.contains('dmk-on'));
+api.开();
 
 /* 关闭 */
 api.关();
