@@ -9,13 +9,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-let 通过 = 0;
-const 失败 = [];
-function ok(名, 条件, 实际) {
-  if (条件) 通过++;
-  else 失败.push(名 + (实际 === undefined ? '' : ' → ' + JSON.stringify(实际)));
-}
-
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const CARD = path.join(ROOT, 'cards', 'manfan');
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'dmk-shell-'));
@@ -82,6 +75,7 @@ const head = makeEl('head');
 const doc = {
   readyState: 'complete', head, body,
   createElement: makeEl,
+  getElementById(id) { return 遍历(body, (n) => n.id === id, [])[0] || null; },
   addEventListener(t, fn) { (doc._h = doc._h || {}), (doc._h[t] = doc._h[t] || []).push(fn); },
   removeEventListener() {},
   querySelector() { return null; },
@@ -129,30 +123,38 @@ global.localStorage = win.localStorage;
 global.getVariables = () => ({ stat_data: stat });
 global.eventOn = () => ({ stop() {} });
 
-/* ---------- 静态守卫：全屏层不能常驻 pointer-events:auto ---------- */
-// 曾经的线上故障：遮罩 opacity:0 但仍 pointer-events:auto，
-// 一层铺满全屏的透明 div 吃掉所有点击，页面看着没卡死却完全点不动。
-{
-  const 源 = fs.readFileSync(path.join(CARD, 'apps', 'shell', 'index.js'), 'utf8');
-  const 取块 = (选择器) => {
-    const i = 源.indexOf(选择器 + '{');
-    if (i < 0) return '';
-    return 源.slice(i, 源.indexOf('}', i) + 1);
-  };
-  const scrim = 取块('.dmk-scrim');
-  const scrimOn = 取块('.dmk-scrim.dmk-on');
-  const drawer = 取块('.dmk-drawer');
-  const drawerOn = 取块('.dmk-drawer.dmk-on');
-  ok('遮罩关闭态不含 pointer-events:auto', scrim && !/pointer-events\s*:\s*auto/.test(scrim), scrim.includes('pointer-events:auto'));
-  ok('遮罩关闭态 visibility:hidden', /visibility\s*:\s*hidden/.test(scrim));
-  ok('遮罩打开态恢复 pointer-events:auto', /pointer-events\s*:\s*auto/.test(scrimOn));
-  ok('抽屉关闭态不含 pointer-events:auto', drawer && !/pointer-events\s*:\s*auto/.test(drawer), drawer.includes('pointer-events:auto'));
-  ok('抽屉打开态恢复 pointer-events:auto', /pointer-events\s*:\s*auto/.test(drawerOn));
+/* ---------- 加载模块 ---------- */
+const mod = await import(pathToFileURL(path.join(TMP, 'apps', 'shell', 'index.mjs')).href);
+
+let 通过 = 0;
+const 失败 = [];
+function ok(名, 条件, 实际) {
+  if (条件) 通过++;
+  else 失败.push(名 + (实际 === undefined ? '' : ' → ' + JSON.stringify(实际)));
 }
 
-/* ---------- 加载模块 ---------- */
-await import(pathToFileURL(path.join(TMP, 'apps', 'shell', 'index.mjs')).href);
+/* ---------- CSS 级回归：透明遮罩绝不能吞点击 ----------
 
+   离线 DOM 桩不解析 CSS，所以这里直接读源码文本做字符串断言。
+   防止重演「透明全屏遮罩吞掉所有点击、整页点不动」的事故。 */
+const 源码 = fs.readFileSync(path.join(TMP, 'apps', 'shell', 'index.mjs'), 'utf8');
+function 规则(选择器) {
+  const i = 源码.indexOf(选择器 + '{');
+  if (i < 0) return '';
+  const j = 源码.indexOf('}', i);
+  return 源码.slice(i, j);
+}
+const 遮罩默认 = 规则('.dmk-scrim');
+const 遮罩打开 = 规则('.dmk-scrim.dmk-on');
+const 抽屉默认 = 规则('.dmk-drawer');
+const 抽屉打开 = 规则('.dmk-drawer.dmk-on');
+ok('遮罩默认 pointer-events:none', 遮罩默认.includes('pointer-events:none'), 遮罩默认);
+ok('遮罩默认 visibility:hidden', 遮罩默认.includes('visibility:hidden'));
+ok('遮罩打开才 pointer-events:auto', 遮罩打开.includes('pointer-events:auto'), 遮罩打开);
+ok('抽屉默认 pointer-events:none', 抽屉默认.includes('pointer-events:none'), 抽屉默认);
+ok('抽屉打开才 pointer-events:auto', 抽屉打开.includes('pointer-events:auto'), 抽屉打开);
+// CSS 里根选择器写作 #${根ID}{（模板插值），所以按紧邻的 z-index 定位
+ok('根节点 pointer-events:none', 源码.includes('z-index:2147483640;pointer-events:none'));
 
 const api = win.__DMK_SHELL__;
 ok('自动挂载并暴露 api', !!api);
@@ -166,8 +168,6 @@ ok('胶囊默认在右侧', parseFloat(胶囊.style.left) > 900, 胶囊.style.le
 const drawer = 遍历(root, (n) => n.className === 'dmk-drawer', [])[0];
 ok('抽屉存在', !!drawer);
 ok('初始是关着的', !drawer.classList.contains('dmk-on'));
-const scrimEl = 遍历(root, (n) => n.className === 'dmk-scrim', [])[0];
-ok('遮罩初始也没有 dmk-on（否则会吃掉点击）', !!scrimEl && !scrimEl.classList.contains('dmk-on'));
 
 api.开();
 ok('打开后带 dmk-on', drawer.classList.contains('dmk-on'));
@@ -233,6 +233,14 @@ ok('料理页默认是灶台占位', 文4.includes('稍后接入'));
 /* 关闭 */
 api.关();
 ok('关闭后去掉 dmk-on', !drawer.classList.contains('dmk-on'));
+
+/* root 被外部移除后能自愈重建（对应应急命令的场景） */
+root.parentNode.removeChild(root);
+ok('root 已移除', !doc.getElementById('dmk-root'));
+const 再挂 = mod.挂载();
+ok('重新挂载返回 api', !!再挂 && !!win.__DMK_SHELL__);
+ok('重建后 root 回到 body', !!doc.getElementById('dmk-root'));
+ok('重建后胶囊存在', !!遍历(doc.getElementById('dmk-root'), (n) => n.id === 'dmk-capsule', [])[0]);
 
 /* 单例 */
 const again = api.挂载 ? api.挂载() : null;

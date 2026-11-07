@@ -41,20 +41,14 @@ const 样式 = `
   box-shadow:0 2px 10px rgba(0,0,0,.35);backdrop-filter:blur(2px);transition:opacity .18s}
 #${胶囊ID}:active{cursor:grabbing}
 #${胶囊ID}:hover{opacity:.92}
-/* 关闭态必须 pointer-events:none + visibility:hidden。
-   只靠 opacity:0 隐藏的话，一层铺满全屏的透明 div 会吃掉所有点击，
-   页面看起来没卡死（动画还在跑）但完全点不动。 */
-.dmk-scrim{position:fixed;inset:0;background:rgba(20,16,11,.34);
-  opacity:0;visibility:hidden;pointer-events:none;
-  transition:opacity .2s,visibility .2s}
+.dmk-scrim{position:fixed;inset:0;background:rgba(20,16,11,.34);pointer-events:none;
+  opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
 .dmk-scrim.dmk-on{opacity:1;visibility:visible;pointer-events:auto}
 .dmk-drawer{position:fixed;top:0;right:0;width:min(600px,94vw);height:100vh;height:100dvh;
-  background:var(--dmk-paper);border-left:1px solid var(--dmk-line);
-  visibility:hidden;pointer-events:none;
-  display:flex;flex-direction:column;transform:translateX(100%);
-  transition:transform .24s ease,visibility .24s;
+  background:var(--dmk-paper);border-left:1px solid var(--dmk-line);pointer-events:none;
+  display:flex;flex-direction:column;transform:translateX(100%);transition:transform .24s ease;
   box-shadow:-6px 0 28px rgba(0,0,0,.22)}
-.dmk-drawer.dmk-on{transform:translateX(0);visibility:visible;pointer-events:auto}
+.dmk-drawer.dmk-on{transform:translateX(0);pointer-events:auto}
 @media (prefers-reduced-motion:reduce){.dmk-drawer,.dmk-scrim{transition:none}}
 
 .dmk-hd{padding:10px 14px 8px;border-bottom:1px solid var(--dmk-line);background:var(--dmk-paper2)}
@@ -167,7 +161,12 @@ function 存记忆页(键) {
 
 export function 挂载() {
   const win = 宿主();
-  if (win.__DMK_SHELL__) return win.__DMK_SHELL__;
+  const 旧 = win.__DMK_SHELL__;
+  if (旧) {
+    // root 还在就复用；root 被外部移除（例如手动清理卡死的遮罩）则先销毁再重建
+    if (win.document.getElementById(根ID)) return 旧;
+    旧.销毁();
+  }
   const doc = win.document;
 
   const root = 元素('div');
