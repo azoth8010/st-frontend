@@ -25,6 +25,8 @@ const 页面键 = 'dmk:shell:page';
 const 页面表 = [
   { 键: '角色', 子: ['状态', '装备技能', '背包', '委托'] },
   { 键: '世界', 子: ['地图', '编年'] },
+  { 键: '里程碑', 子: null },
+  { 键: '传闻', 子: null },
   { 键: '关系', 子: null },
   { 键: '料理', 子: ['灶台', '食材', '图鉴'] },
 ];
@@ -113,6 +115,7 @@ const 样式 = `
 .dmk-row:last-child{border-bottom:0}
 .dmk-row .k{flex:0 0 78px;color:var(--text-secondary);font-size:12px}
 .dmk-row .v{flex:1;color:var(--text-primary);word-break:break-word;line-height:1.7}
+.dmk-row[data-done] .v{color:var(--action);font-weight:600}
 .dmk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:var(--s-2)}
 .dmk-cell{background:var(--surface-raised);border:1px solid var(--border);
   border-radius:var(--r-sm);padding:var(--s-2);text-align:center}
@@ -520,6 +523,8 @@ export function 挂载() {
   function 页(键, 子, s) {
     if (键 === '角色') return 子 === '装备技能' ? 页装备技能(s) : 子 === '背包' ? 页背包(s) : 子 === '委托' ? 页委托(s) : 页角色状态(s);
     if (键 === '世界') return 子 === '编年' ? 页编年(s) : 页地图(s);
+    if (键 === '里程碑') return 页里程碑(s);
+    if (键 === '传闻') return 页传闻(s);
     if (键 === '关系') return 页关系(s);
     return 页料理(子, s);
   }
@@ -711,13 +716,6 @@ export function 挂载() {
     }
     body.appendChild(b);
 
-    const 里 = Object.keys(w.里程碑).filter(function (k) { return w.里程碑[k] === true; });
-    if (里.length) {
-      const c = 节('里程碑 · ' + 里.length + ' / 7');
-      里.forEach(function (k) { c.appendChild(行(k, '已达成')); });
-      body.appendChild(c);
-    }
-
     const 账 = Object.keys(w.账本);
     if (账.length) {
       const d = 节('改动账本');
@@ -727,12 +725,37 @@ export function 挂载() {
       });
       body.appendChild(d);
     }
+  }
 
-    if (w.传闻.length) {
-      const e = 节('今日传闻');
-      w.传闻.forEach(function (t) { e.appendChild(行('·', t)); });
-      body.appendChild(e);
+  const 里程碑表 = [
+    ['M01', '首次独自解决一次遭遇'], ['M02', '首次做出绝品料理'],
+    ['M03', '首次带全队活着回来'], ['M04', '首次识别魔物并记录'],
+    ['M05', '首次复活他人'], ['M06', '死过一次并复活'],
+    ['M07', '成为黄金之国国王'],
+  ];
+
+  function 页里程碑(s) {
+    const m = s.世界.里程碑 || {};
+    const 里 = 里程碑表.filter(function (x) { return m[x[0]] === true; }).length;
+    const a = 节('里程碑 · ' + 里 + ' / 7');
+    里程碑表.forEach(function (x) {
+      const 成 = m[x[0]] === true;
+      const r = 行(x[0] + '　' + x[1], 成 ? '已达成' : '—');
+      if (成) r.setAttribute('data-done', '1');
+      a.appendChild(r);
+    });
+    body.appendChild(a);
+  }
+
+  function 页传闻(s) {
+    const 列 = (s.世界.传闻 || []).filter(Boolean);
+    const a = 节('今日传闻 · ' + 列.length + ' / 4');
+    if (!列.length) {
+      a.appendChild(元素('div', 'dmk-empty', '今天没有新的传闻。'));
+    } else {
+      列.forEach(function (t) { a.appendChild(行('·', t)); });
     }
+    body.appendChild(a);
   }
 
   function 状态字(v) {
