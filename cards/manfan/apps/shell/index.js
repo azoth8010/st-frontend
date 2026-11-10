@@ -116,6 +116,19 @@ const 样式 = `
 .dmk-row .k{flex:0 0 78px;color:var(--text-secondary);font-size:12px}
 .dmk-row .v{flex:1;color:var(--text-primary);word-break:break-word;line-height:1.7}
 .dmk-row[data-done] .v{color:var(--action);font-weight:600}
+.dmk-mile{display:flex;align-items:baseline;gap:var(--s-3);padding:var(--s-2) 0;
+  border-bottom:1px dashed var(--border);font-size:14px}
+.dmk-mile:last-child{border-bottom:0}
+.dmk-mile .n{flex:1;min-width:0;line-height:1.6;color:var(--text-primary);word-break:break-word}
+.dmk-mile .n b{font-weight:600;color:var(--text-secondary);margin-right:var(--s-2);font-variant-numeric:tabular-nums}
+.dmk-mile .s{flex:0 0 auto;font-size:12px;color:var(--text-tertiary)}
+.dmk-mile[data-done="1"] .n{color:var(--action);font-weight:600}
+.dmk-mile[data-done="1"] .n b{color:var(--action)}
+.dmk-mile[data-done="1"] .s{color:var(--action)}
+.dmk-quote{padding:var(--s-2) 0;border-bottom:1px dashed var(--border);font-size:14px;
+  line-height:1.8;color:var(--text-primary);word-break:break-word}
+.dmk-quote:last-child{border-bottom:0}
+.dmk-quote::before{content:"· ";color:var(--text-tertiary)}
 .dmk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:var(--s-2)}
 .dmk-cell{background:var(--surface-raised);border:1px solid var(--border);
   border-radius:var(--r-sm);padding:var(--s-2);text-align:center}
@@ -740,8 +753,14 @@ export function 挂载() {
     const a = 节('里程碑 · ' + 里 + ' / 7');
     里程碑表.forEach(function (x) {
       const 成 = m[x[0]] === true;
-      const r = 行(x[0] + '　' + x[1], 成 ? '已达成' : '—');
+      const r = 元素('div', 'dmk-mile');
       if (成) r.setAttribute('data-done', '1');
+      const n = 元素('span', 'n');
+      n.appendChild(元素('b', null, x[0]));
+      n.appendChild(document.createTextNode(x[1]));
+      const st = 元素('span', 's', 成 ? '已达成' : '—');
+      r.appendChild(n);
+      r.appendChild(st);
       a.appendChild(r);
     });
     body.appendChild(a);
@@ -753,7 +772,7 @@ export function 挂载() {
     if (!列.length) {
       a.appendChild(元素('div', 'dmk-empty', '今天没有新的传闻。'));
     } else {
-      列.forEach(function (t) { a.appendChild(行('·', t)); });
+      列.forEach(function (t) { a.appendChild(元素('div', 'dmk-quote', t)); });
     }
     body.appendChild(a);
   }
