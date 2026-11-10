@@ -255,8 +255,52 @@ export function 挂载() {
   style.textContent = 样式Token + "\n" + 样式;
   root.appendChild(style);
 
+  /* 六维雷达：六边形网格 + 数值多边形 */
+  function 雷达(属性) {
+    const 轴 = ['体魄', '敏捷', '学识', '洞察', '意志', '魅力'];
+    const 值 = 轴.map(function (k) { const v = Number(属性 && 属性[k]); return isFinite(v) ? v : 0; });
+    const C = 120, R = 72;
+    function 点(i, v) {
+      const a = (-90 + i * 60) * Math.PI / 180;
+      const r = R * Math.max(0, Math.min(100, v)) / 100;
+      return [C + Math.cos(a) * r, C + Math.sin(a) * r];
+    }
+    let svg = '<svg viewBox="0 0 240 240" role="img" aria-label="六维属性图">';
+    // 网格
+    [20, 40, 60, 80, 100].forEach(function (lv) {
+      const pts = 轴.map(function (_, i) { return 点(i, lv).map(function (n) { return n.toFixed(1); }).join(','); }).join(' ');
+      svg += '<polygon class="ring' + (lv === 100 ? ' is-outer' : '') + '" points="' + pts + '"/>';
+    });
+    // 轴线
+    轴.forEach(function (_, i) {
+      const p2 = 点(i, 100);
+      svg += '<line class="axis" x1="' + C + '" y1="' + C + '" x2="' + p2[0].toFixed(1) + '" y2="' + p2[1].toFixed(1) + '"/>';
+    });
+    // 数值面
+    const poly = 值.map(function (v, i) {
+      return 点(i, v).map(function (n) { return n.toFixed(1); }).join(',');
+    }).join(' ');
+    svg += '<polygon class="shape" points="' + poly + '"/>';
+    值.forEach(function (v, i) {
+      const pt = 点(i, v);
+      svg += '<circle class="dot" cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="2.6"/>';
+    });
+    // 标签
+    轴.forEach(function (k, i) {
+      const a = (-90 + i * 60) * Math.PI / 180;
+      const x = C + Math.cos(a) * (R + 22), y = C + Math.sin(a) * (R + 22);
+      const anchor = Math.abs(Math.cos(a)) < .2 ? 'middle' : (Math.cos(a) > 0 ? 'start' : 'end');
+      svg += '<text class="t" x="' + x.toFixed(1) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="' + anchor + '">'
+        + k + ' <tspan font-weight="600">' + 值[i] + '</tspan></text>';
+    });
+    svg += '</svg>';
+    const wrap = 元素('div', 'dmk-radar');
+    wrap.innerHTML = svg;
+    return wrap;
+  }
+
   /* 胶囊 */
-  const 胶囊 = 元素('button', null, '⌘');
+  const 胶囊 = 元素('button', null, '🍲');
   胶囊.id = 胶囊ID;
   胶囊.title = '打开迷宫饭面板';
   胶囊.setAttribute('aria-label', '打开迷宫饭面板');
@@ -478,6 +522,7 @@ export function 挂载() {
     body.appendChild(a);
 
     const b = 节('六维');
+    b.appendChild(雷达(p.属性));
     const g = 元素('div', 'dmk-grid');
     Object.keys(p.属性).forEach(function (k) {
       const c = 元素('div', 'dmk-cell');
