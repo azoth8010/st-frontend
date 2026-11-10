@@ -118,6 +118,14 @@ const 样式 = `
   border-radius:var(--r-sm);padding:var(--s-2);text-align:center}
 .dmk-cell .n{font-size:12px;color:var(--text-secondary)}
 .dmk-cell .q{font-size:16px;font-weight:600;color:var(--text-primary);margin-top:var(--s-1)}
+.dmk-radar{display:flex;justify-content:center;margin:var(--s-2) 0 0}
+.dmk-radar svg{display:block;width:100%;max-width:260px;height:auto}
+.dmk-radar .axis{stroke:var(--border);stroke-width:1}
+.dmk-radar .ring{fill:none;stroke:var(--border);stroke-width:1}
+.dmk-radar .ring.is-outer{stroke:var(--border-strong)}
+.dmk-radar .shape{fill:rgba(140,90,43,.16);stroke:#8c5a2b;stroke-width:1.6;stroke-linejoin:round}
+.dmk-radar .dot{fill:#8c5a2b}
+.dmk-radar .t{font:10px var(--serif);fill:var(--text-secondary)}
 .dmk-tag{display:inline-block;padding:1px var(--s-2);border:1px solid var(--border-strong);
   border-radius:var(--r-sm);font-size:12px;color:var(--text-secondary);margin:var(--s-1) var(--s-1) 0 0}
 .dmk-empty{padding:var(--s-8) var(--s-2);text-align:center;
@@ -255,44 +263,62 @@ export function 挂载() {
   style.textContent = 样式Token + "\n" + 样式;
   root.appendChild(style);
 
-  /* 六维雷达：六边形网格 + 数值多边形 */
+  /* 六维雷达：六边形网格 + 数值多边形。
+     尺寸、颜色全部写成 SVG 呈现属性，CSS 没加载也不会变成黑块。 */
   function 雷达(属性) {
     const 轴 = ['体魄', '敏捷', '学识', '洞察', '意志', '魅力'];
-    const 值 = 轴.map(function (k) { const v = Number(属性 && 属性[k]); return isFinite(v) ? v : 0; });
+    const 值 = 轴.map(function (k) {
+      const v = Number(属性 && 属性[k]);
+      return isFinite(v) ? v : 0;
+    });
     const C = 120, R = 72;
+    const 线 = '#c8c3b1', 深线 = '#aca391', 主 = '#8c5a2b', 字 = '#756342';
     function 点(i, v) {
       const a = (-90 + i * 60) * Math.PI / 180;
       const r = R * Math.max(0, Math.min(100, v)) / 100;
       return [C + Math.cos(a) * r, C + Math.sin(a) * r];
     }
-    let svg = '<svg viewBox="0 0 240 240" role="img" aria-label="六维属性图">';
-    // 网格
+    let svg = '<svg width="240" height="240" viewBox="0 0 240 240" role="img" '
+      + 'aria-label="六维属性图" style="display:block;width:100%;max-width:260px;height:auto">';
+
     [20, 40, 60, 80, 100].forEach(function (lv) {
-      const pts = 轴.map(function (_, i) { return 点(i, lv).map(function (n) { return n.toFixed(1); }).join(','); }).join(' ');
-      svg += '<polygon class="ring' + (lv === 100 ? ' is-outer' : '') + '" points="' + pts + '"/>';
+      const pts = 轴.map(function (_, i) {
+        const q = 点(i, lv);
+        return q[0].toFixed(1) + ',' + q[1].toFixed(1);
+      }).join(' ');
+      svg += '<polygon points="' + pts + '" fill="none" stroke="'
+        + (lv === 100 ? 深线 : 线) + '" stroke-width="1"/>';
     });
-    // 轴线
+
     轴.forEach(function (_, i) {
-      const p2 = 点(i, 100);
-      svg += '<line class="axis" x1="' + C + '" y1="' + C + '" x2="' + p2[0].toFixed(1) + '" y2="' + p2[1].toFixed(1) + '"/>';
+      const q = 点(i, 100);
+      svg += '<line x1="' + C + '" y1="' + C + '" x2="' + q[0].toFixed(1)
+        + '" y2="' + q[1].toFixed(1) + '" stroke="' + 线 + '" stroke-width="1"/>';
     });
-    // 数值面
+
     const poly = 值.map(function (v, i) {
-      return 点(i, v).map(function (n) { return n.toFixed(1); }).join(',');
+      const q = 点(i, v);
+      return q[0].toFixed(1) + ',' + q[1].toFixed(1);
     }).join(' ');
-    svg += '<polygon class="shape" points="' + poly + '"/>';
+    svg += '<polygon points="' + poly + '" fill="rgba(140,90,43,0.16)" stroke="' + 主
+      + '" stroke-width="1.6" stroke-linejoin="round"/>';
+
     值.forEach(function (v, i) {
-      const pt = 点(i, v);
-      svg += '<circle class="dot" cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="2.6"/>';
+      const q = 点(i, v);
+      svg += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1)
+        + '" r="2.6" fill="' + 主 + '"/>';
     });
-    // 标签
+
     轴.forEach(function (k, i) {
       const a = (-90 + i * 60) * Math.PI / 180;
-      const x = C + Math.cos(a) * (R + 22), y = C + Math.sin(a) * (R + 22);
-      const anchor = Math.abs(Math.cos(a)) < .2 ? 'middle' : (Math.cos(a) > 0 ? 'start' : 'end');
-      svg += '<text class="t" x="' + x.toFixed(1) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="' + anchor + '">'
-        + k + ' <tspan font-weight="600">' + 值[i] + '</tspan></text>';
+      const x = C + Math.cos(a) * (R + 22);
+      const y = C + Math.sin(a) * (R + 22);
+      const anchor = Math.abs(Math.cos(a)) < 0.2 ? 'middle' : (Math.cos(a) > 0 ? 'start' : 'end');
+      svg += '<text x="' + x.toFixed(1) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="' + anchor
+        + '" font-size="10" font-family="serif" fill="' + 字 + '">' + k
+        + ' <tspan font-weight="600" fill="#352722">' + 值[i] + '</tspan></text>';
     });
+
     svg += '</svg>';
     const wrap = 元素('div', 'dmk-radar');
     wrap.innerHTML = svg;
