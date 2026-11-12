@@ -80,9 +80,11 @@ https://cdn.jsdelivr.net/gh/azoth8010/st-frontend@<版本>/<路径>
 
 ## License
 
-代码部分（`core/` `schema-kit/` `skins/` `cards/*/apps/` `cards/*/adapter.js`）采用 **MIT**，见 `LICENSE`。
+代码部分（`core/` `schema-kit/` `skins/` `cards/*/apps/` `cards/*/adapter.js`）采用 **PolyForm Noncommercial License 1.0.0**，见 `LICENSE`。
 
-`cards/*/assets/` 下的同人图像**不在 MIT 范围内**：仅供本角色卡使用，不授予再分发权。角色形象版权归原作者所有。
+可以自由阅读、修改、在自己的非商业作品里使用；**不得用于商业目的**（售卖、付费订阅、商业定制、附带广告收益等）。
+
+`cards/*/assets/` 下的同人图像**不在上述代码许可范围内**：仅供本角色卡使用，不授予再分发权。角色形象版权归原作者所有。
 
 ## 迷宫饭 · 前端现状（v0.2）
 
