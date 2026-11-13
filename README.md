@@ -63,7 +63,7 @@ https://cdn.jsdelivr.net/gh/azoth8010/st-frontend@<版本>/<路径>
 
 | 类型 | 目录 | 例 |
 |---|---|---|
-| 头像 | `assets/portrait/` | `sensi.webp` |
+| 头像 | `assets/portrait/` | `senshi.webp` |
 | 正文 CG | `assets/cg/` | `dragon-steak.webp` |
 | 地图 | `assets/map/` | `world.webp` `maze.webp` |
 

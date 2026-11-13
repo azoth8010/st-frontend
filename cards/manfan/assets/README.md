@@ -24,7 +24,7 @@ assets/
 
 | 对象 | slug |
 |---|---|
-| 森西 | `sensi` |
+| 森西 | `senshi` |
 | 玛露希尔 | `marcille` |
 | 奇尔查克 | `chilchuck` |
 | 炎龙排 | `dragon-steak` |
@@ -62,5 +62,5 @@ assets/
 **三个坑**
 
 1. **必须保留原文件名。** 装了重命名插件会改成时间戳/UUID，manifest 里那堆 slug 全部对不上。
-2. **不要覆盖同名文件。** jsdelivr 对同名覆盖有最长 12 小时缓存，换图请改叫 `sensi.v2.webp` 再改 manifest 一行。
+2. **不要覆盖同名文件。** jsdelivr 对同名覆盖有最长 12 小时缓存，换图请改叫 `senshi.v2.webp` 再改 manifest 一行。
 3. **存储路径和自定义域名的目录必须完全一致**，少一层就是 404，而且 404 页面看不出是哪一步错了。
