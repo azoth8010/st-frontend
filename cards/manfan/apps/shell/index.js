@@ -16,6 +16,7 @@ import { 格式化时刻, 格式化位置, 深度名 } from '../../adapter.js';
 import { 样式Token } from '../_shared/tokens.js';
 import * as 交互 from '../_shared/interaction.js';
 import { 地图配置, 取图地址 } from '../../map-config.js';
+import { 骰子已开, 设骰子开关, 挂载骰子 } from '../../dice.js';
 
 const 根ID = 'dmk-root';
 const 胶囊ID = 'dmk-capsule';
@@ -395,7 +396,7 @@ export function 挂载() {
   doc.body.appendChild(root);
 
   const 状态 = {
-    开: false, 页: 读记忆页() || '角色', 子: {}, 滚: 0, 骰子: true,
+    开: false, 页: 读记忆页() || '角色', 子: {}, 滚: 0, 骰子: 骰子已开(),
     地图视图: '世界', 灶台主材: '', 灶台辅材: '', 灶台做法: '',
   };
   页面表.forEach(function (p) { if (p.子) 状态.子[p.键] = p.子[0]; });
@@ -993,7 +994,7 @@ export function 挂载() {
     开关.setAttribute('aria-label', '骰子开关');
     开关.setAttribute('aria-pressed', String(!!状态.骰子));
     交互.可点按(开关, function () {
-      状态.骰子 = !状态.骰子;
+      状态.骰子 = 设骰子开关(!状态.骰子);
       开关.classList.toggle('dmk-on', 状态.骰子);
       开关.setAttribute('aria-pressed', String(状态.骰子));
     });
@@ -1042,6 +1043,8 @@ export function 挂载() {
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   挂载();
+  // 骰池挂在模块加载时：它靠事件工作，与抽屉开不开无关
+  挂载骰子();
 }
 
 export default 挂载;
