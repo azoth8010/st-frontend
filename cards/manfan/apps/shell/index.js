@@ -15,7 +15,7 @@
 import { 格式化时刻, 格式化位置, 深度名 } from '../../adapter.js';
 import { 样式Token } from '../_shared/tokens.js';
 import * as 交互 from '../_shared/interaction.js';
-import { 地图配置, 取图地址 } from '../../map-config.js';
+import { 地图配置, 取图地址, CDN } from '../../map-config.js';
 import { 骰子已开, 设骰子开关, 挂载骰子 } from '../../dice.js';
 
 const 根ID = 'dmk-root';
@@ -805,7 +805,7 @@ export function 挂载() {
     let 镜像 = 0;
     img.addEventListener('error', function () {
       镜像 += 1;
-      if (镜像 < 2) { img.src = 取图地址(图.路径, 镜像); return; }
+      if (镜像 < CDN.length) { img.src = 取图地址(图.路径, 镜像); return; }
       if (img.parentNode) wrap.removeChild(img);
       wrap.appendChild(元素('div', 'dmk-diag', '底图加载失败。检查网络，或在设置里切换镜像。'));
     });
@@ -987,8 +987,8 @@ export function 挂载() {
     hd2.appendChild(t);
     hd2.appendChild(close);
     const b = 元素('div', 'dmk-body');
-    b.appendChild(行('图床镜像', 'testingcf.jsdelivr.net'));
-    b.appendChild(行('备用镜像', 'cdn.jsdelivr.net'));
+    b.appendChild(行('图床', 'cloudflare-imgbed（自建）'));
+    b.appendChild(行('底图', '1448×1086 / 1280×1920'));
     b.appendChild(行('数据来源', 'MVU stat_data（只读）'));
     const 开关 = 元素('button', 'dmk-switch' + (状态.骰子 ? ' dmk-on' : ''));
     开关.setAttribute('aria-label', '骰子开关');

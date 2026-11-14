@@ -3,27 +3,29 @@
 // 坐标由 世界地图.png / 迷宫剖面.png 实测标定（2026-11-06），**百分比，与像素无关**。
 // 标定方法：连通域分析取陆块中心 + 行亮度/边缘检测取层带边界，再画叠加图目视复核。
 //
-// 底图已上 CDN（压缩版，非原图）：
-//   world.webp 1200×900 约 325 KB ｜ maze.webp 900×1350 约 382 KB
-// 原始 PNG 留在 02-Projects/迷宫饭/ 作备份，不出网。
+// 底图改走自建图床（Cloudflare imgbed）：
+//   world.png 1448×1086 857 KB ｜ maze.png 1280×1920 1.0 MB
+// 仓库里的 assets/map/*.webp 是旧压缩版，留作备份，不再引用。
 // ============================================================
 
-// 镜像按顺序试，第一个挂了换下一个。testingcf 是国内线路，实测最快。
-export const CDN = [
-  'https://testingcf.jsdelivr.net/gh/azoth8010/st-frontend@main/',
-  'https://cdn.jsdelivr.net/gh/azoth8010/st-frontend@main/',
-];
+/** 自建图床。上传后地址带毫秒前缀（/file/manfan/1794630897656_world.png），
+ *  推不出规律，所以下面直接写完整 URL，不拼前缀。 */
+export const 图床 = 'https://900037e6.cloudflare-imgbed-6au.pages.dev/';
 
-/** 拼出图片地址。镜像序号越界时回落到第一个。 */
-export function 取图地址(相对路径, 镜像 = 0) {
-  return (CDN[镜像] || CDN[0]) + 相对路径;
+// 目前只有图床一个源；回退源未定（2026-11-14），定了往后加。
+export const CDN = [图床];
+
+/** 绝对地址原样返回；相对路径按镜像拼。 */
+export function 取图地址(路径, 镜像 = 0) {
+  if (/^https?:\/\//.test(路径)) return 路径;
+  return (CDN[镜像] || CDN[0]) + 路径;
 }
 
 export const 地图配置 = {
   世界: {
-    路径: 'cards/manfan/assets/map/world.webp',
-    宽: 1200,
-    高: 900,
+    路径: 'https://900037e6.cloudflare-imgbed-6au.pages.dev/file/manfan/1794630897656_world.png',
+    宽: 1448,
+    高: 1086,
     比: 1.333, // 4:3
     节点: [
       // x/y 是陆块几何中心；半径按陆块大小给，用来定点击热区
@@ -40,9 +42,9 @@ export const 地图配置 = {
   },
 
   迷宫: {
-    路径: 'cards/manfan/assets/map/maze.webp',
-    宽: 900,
-    高: 1350,
+    路径: 'https://900037e6.cloudflare-imgbed-6au.pages.dev/file/manfan/1794630909064_maze.png',
+    宽: 1280,
+    高: 1920,
     比: 0.667, // 2:3
     // 自上而下的九段。y0/y1 是面板边界，中 是中心，都用百分比。
     层带: [

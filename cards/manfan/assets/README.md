@@ -2,6 +2,18 @@
 
 图片全部预制（AI 生成，不涉商用），**不进 MVU**。`stat_data` 里只存名字，前端按名字查 `manifest.json`。
 
+**2026-11-14 起图片走自建图床**（Cloudflare imgbed），不再从本仓库读：
+
+| 项 | 值 |
+|---|---|
+| 域名 | `https://900037e6.cloudflare-imgbed-6au.pages.dev` |
+| URL 形态 | `/file/<目录>/<毫秒时间戳>_<文件名>.<ext>`，例 `/file/manfan/1794630897656_world.png` |
+| 权限 | 公开读，无防盗链 |
+| 入口 | `map-config.js` 的 `图床` / `CDN`；`取图地址()` 对绝对地址原样返回 |
+
+**时间戳前缀是随机数，推不出规律**——上传后必须把完整 URL 登记进 `manifest.json`，
+不能靠名字拼地址。
+
 ---
 
 ## 目录
@@ -10,9 +22,9 @@
 assets/
 ├── portrait/     头像   320×320 方形   webp ≤40 KB
 ├── cg/           正文 CG 宽 1024，高 ≤1200  webp ≤120 KB
-├── map/
-│   ├── world.webp   1448×1086（4:3）
-│   └── maze.webp    1280×1920（2:3）
+├── map/           旧压缩版，仅备份；实际从图床取
+│   ├── world.webp   1200×900
+│   └── maze.webp    900×1350
 └── manifest.json
 ```
 
