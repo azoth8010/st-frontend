@@ -62,17 +62,27 @@ assets/
 
 ---
 
-## 上传（PicGo）
+## 上传（Cloudflare imgbed）
 
-| 字段 | 值 |
+| 项 | 值 |
 |---|---|
-| 仓库 | `azoth8010/st-frontend` |
-| 分支 | `main` |
-| 存储路径 | `cards/manfan/assets/cg/`（按类型改末级目录） |
-| 自定义域名 | `https://cdn.jsdelivr.net/gh/azoth8010/st-frontend@main/cards/manfan/assets/cg/` |
+| 图床 | `https://900037e6.cloudflare-imgbed-6au.pages.dev` |
+| 上传目录 | `manfan/portrait`、`manfan/cg`、`manfan/map` |
+| 上传后地址 | `/file/manfan/<毫秒时间戳>_<原名>.<ext>`，例 `/file/manfan/1794630897656_world.png` |
 
-**三个坑**
+**流程**
 
-1. **必须保留原文件名。** 装了重命名插件会改成时间戳/UUID，manifest 里那堆 slug 全部对不上。
-2. **不要覆盖同名文件。** jsdelivr 对同名覆盖有最长 12 小时缓存，换图请改叫 `senshi.v2.webp` 再改 manifest 一行。
-3. **存储路径和自定义域名的目录必须完全一致**，少一层就是 404，而且 404 页面看不出是哪一步错了。
+1. 文件先按 slug 命名：`senshi.webp`、`dragon-steak.webp`
+2. 传到对应目录，图床会自动加时间戳前缀
+3. **复制完整 URL，登记进 `manifest.json`**——前缀是随机数，靠名字拼不出来
+4. 前端按名字查 manifest，拿到 URL 直接当 `<img src>`
+
+**四条注意**
+
+1. **PNG 太大了。** 现有两张底图 PNG 合计 1.9 MB（857 KB + 1.0 MB），转 webp 能到 0.7 MB。
+   换图时先转再传，转完 URL 会变，manifest 记得改。
+2. **不要覆盖同名文件。** 图床按时间戳存，覆盖其实不会发生；但 manifest 里旧 URL 会指向旧图，
+   所以「换图」= 传新图 + 改 manifest 那一行，别指望同名自动更新。
+3. **图床挂了没有回退。** `CDN` 里目前只有图床一个源（2026-11-14 决定暂不设备用），
+   挂了就是「底图加载失败」的诊断块。
+4. **防盗链没开，别开。** 酒馆在 iframe 里加载图片，Referer 不是图床域名，开了白屏。
