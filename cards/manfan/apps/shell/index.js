@@ -15,7 +15,7 @@
 import { 格式化时刻, 格式化位置, 深度名 } from '../../adapter.js';
 import { 样式Token } from '../_shared/tokens.js';
 import * as 交互 from '../_shared/interaction.js';
-import { 地图配置, 取图地址, CDN } from '../../map-config.js';
+import { 地图配置, 取图地址 } from '../../map-config.js';
 import { 骰子已开, 设骰子开关, 挂载骰子 } from '../../dice.js';
 
 const 根ID = 'dmk-root';
@@ -802,14 +802,16 @@ export function 挂载() {
     const img = 元素('img');
     img.alt = 视图 === '世界' ? '世界地图' : '迷宫剖面';
     img.loading = 'lazy';
-    let 镜像 = 0;
+    // 路径 + 备用后缀：转 webp 之前先吃 png，转了自动走 webp
+    const 候选 = [图.路径].concat(图.备用 || []);
+    let 第几张 = 0;
     img.addEventListener('error', function () {
-      镜像 += 1;
-      if (镜像 < CDN.length) { img.src = 取图地址(图.路径, 镜像); return; }
+      第几张 += 1;
+      if (第几张 < 候选.length) { img.src = 取图地址(候选[第几张]); return; }
       if (img.parentNode) wrap.removeChild(img);
-      wrap.appendChild(元素('div', 'dmk-diag', '底图加载失败。检查网络，或在设置里切换镜像。'));
+      wrap.appendChild(元素('div', 'dmk-diag', '底图加载失败。检查网络，或确认图床上的 world.webp / maze.webp 还在。'));
     });
-    img.src = 取图地址(图.路径, 0);
+    img.src = 取图地址(候选[0]);
     wrap.appendChild(img);
 
     const 详情 = 元素('div', 'dmk-detail');

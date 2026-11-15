@@ -3,13 +3,13 @@
 // 坐标由 世界地图.png / 迷宫剖面.png 实测标定（2026-11-06），**百分比，与像素无关**。
 // 标定方法：连通域分析取陆块中心 + 行亮度/边缘检测取层带边界，再画叠加图目视复核。
 //
-// 底图改走自建图床（Cloudflare imgbed）：
-//   world.png 1448×1086 857 KB ｜ maze.png 1280×1920 1.0 MB
+// 底图走自建图床（Cloudflare imgbed），上传设「仅原名 + 转 webp」：
+//   world.webp 1448×1086 ｜ maze.webp 1280×1920（尺寸不变）
 // 仓库里的 assets/map/*.webp 是旧压缩版，留作备份，不再引用。
 // ============================================================
 
-/** 自建图床。上传后地址带毫秒前缀（/file/manfan/1794630897656_world.png），
- *  推不出规律，所以下面直接写完整 URL，不拼前缀。 */
+/** 自建图床。上传用「仅原名 + 转 webp」，所以地址可推：
+ *  /file/manfan/world.webp —— 固定，不随时间戳变。 */
 export const 图床 = 'https://900037e6.cloudflare-imgbed-6au.pages.dev/';
 
 // 目前只有图床一个源；回退源未定（2026-11-14），定了往后加。
@@ -23,7 +23,11 @@ export function 取图地址(路径, 镜像 = 0) {
 
 export const 地图配置 = {
   世界: {
-    路径: 'https://900037e6.cloudflare-imgbed-6au.pages.dev/file/manfan/1794630897656_world.png',
+    路径: 'file/manfan/world.webp',
+    备用: [
+      'file/manfan/world.png',   // 仅原名上传后若没转成 webp
+      'https://900037e6.cloudflare-imgbed-6au.pages.dev/file/manfan/1794630897656_world.png', // 旧时间戳图，过渡用
+    ],
     宽: 1448,
     高: 1086,
     比: 1.333, // 4:3
@@ -42,7 +46,11 @@ export const 地图配置 = {
   },
 
   迷宫: {
-    路径: 'https://900037e6.cloudflare-imgbed-6au.pages.dev/file/manfan/1794630909064_maze.png',
+    路径: 'file/manfan/maze.webp',
+    备用: [
+      'file/manfan/maze.png',
+      'https://900037e6.cloudflare-imgbed-6au.pages.dev/file/manfan/1794630909064_maze.png',
+    ],
     宽: 1280,
     高: 1920,
     比: 0.667, // 2:3

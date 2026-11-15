@@ -7,12 +7,16 @@
 | 项 | 值 |
 |---|---|
 | 域名 | `https://900037e6.cloudflare-imgbed-6au.pages.dev` |
-| URL 形态 | `/file/<目录>/<毫秒时间戳>_<文件名>.<ext>`，例 `/file/manfan/1794630897656_world.png` |
+| 上传设置 | **命名「仅原名」+ 预处理「转 webp」**（转换失败保留原格式） |
+| URL 形态 | `/file/<目录>/<文件名>.webp`，例 `/file/manfan/world.webp` |
 | 权限 | 公开读，无防盗链 |
 | 入口 | `map-config.js` 的 `图床` / `CDN`；`取图地址()` 对绝对地址原样返回 |
 
-**时间戳前缀是随机数，推不出规律**——上传后必须把完整 URL 登记进 `manifest.json`，
-不能靠名字拼地址。
+地址**可以从名字推出来**，所以 `map-config.js` 里写相对路径（`file/manfan/world.webp`），
+`manifest.json` 也只存相对路径。代码里 `取图地址()` 拼上 `图床` 前缀。
+
+**换图会撞缓存**：同名覆盖后 URL 不变，浏览器和 Cloudflare 边缘可能还拿旧图。
+换图时在 manifest / map-config 里加版本号：`file/manfan/world.webp?v=2`，改一次加一。
 
 ---
 
@@ -72,17 +76,16 @@ assets/
 
 **流程**
 
-1. 文件先按 slug 命名：`senshi.webp`、`dragon-steak.webp`
-2. 传到对应目录，图床会自动加时间戳前缀
-3. **复制完整 URL，登记进 `manifest.json`**——前缀是随机数，靠名字拼不出来
-4. 前端按名字查 manifest，拿到 URL 直接当 `<img src>`
+1. 文件按 slug 命名：`senshi.webp`、`dragon-steak.webp`
+2. 传到对应目录（`manfan/portrait` 等），图床按原名存、自动转 webp
+3. 前端按名字拼地址；新图登记进 `manifest.json`
+4. 换图不用改地址，只把 `?v=N` 加一
 
 **四条注意**
 
-1. **PNG 太大了。** 现有两张底图 PNG 合计 1.9 MB（857 KB + 1.0 MB），转 webp 能到 0.7 MB。
-   换图时先转再传，转完 URL 会变，manifest 记得改。
-2. **不要覆盖同名文件。** 图床按时间戳存，覆盖其实不会发生；但 manifest 里旧 URL 会指向旧图，
-   所以「换图」= 传新图 + 改 manifest 那一行，别指望同名自动更新。
+1. **原图直接传 PNG 也行。** 图床会转 webp（失败则保留原格式），不用本地先转。
+2. **同名覆盖要带版本号。** 地址固定是好事也是坑：换了图，缓存可能还是旧图。
+   `?v=2` 这种查询串能强制回源，比改文件名省事。
 3. **图床挂了没有回退。** `CDN` 里目前只有图床一个源（2026-11-14 决定暂不设备用），
    挂了就是「底图加载失败」的诊断块。
 4. **防盗链没开，别开。** 酒馆在 iframe 里加载图片，Referer 不是图床域名，开了白屏。
