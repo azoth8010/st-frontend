@@ -8,14 +8,19 @@ SillyTavern 角色卡自用前端。一套共用引擎，多张卡各自出皮�
 
 ## 现状
 
-| 阶段 | 状态 |
+| 模块 | 状态 |
 |---|---|
 | 仓库骨架 | ✅ 完成 |
-| `cards/manfan/assets/` 资源约定 | ✅ 完成 |
-| `core/` `schema-kit/` 引擎 | ⬜ 待建 |
-| 状态栏 v1 | ⬜ 待建 |
+| 抽屉外壳（状态 / 人物 / 委托 / 料理四页） | ✅ 完成 |
+| 地图（世界 + 迷宫剖面，点击前往） | ✅ 完成 |
+| 料理台（选料拼句 → 填进输入框） | ✅ 完成 |
+| 料理图鉴（26 道原作 + 原创，纯文字） | ✅ 完成 |
+| 暗骰池 `dice.js`（D100×16，不占 UI） | ✅ 完成 |
+| `core/` `schema-kit/` 抽公共引擎 | ⬜ 未抽 |
 
-`core/` 不急着抽。既定顺序：**先做状态栏 v1 → 再做第二屏（图鉴或地图）→ 两屏公共部分稳定了再抽引擎**。只有一屏的时候抽不出正确抽象，只会抽出过度抽象。
+`core/` 暂时没抽：四页共用逻辑还少，抽出来只会是过度抽象。等第二张卡进来再说。
+
+图鉴**只放文字**（菜名 / 最佳★ / 次数 / 首次），料理 CG 只在正文的 `<图鉴>` 标记处出现——图鉴放图会把首屏拉到 9 MB 以上。
 
 ---
 
@@ -64,10 +69,14 @@ https://cdn.jsdelivr.net/gh/azoth8010/st-frontend@<版本>/<路径>
 | 类型 | 目录 | 例 |
 |---|---|---|
 | 头像 | `assets/portrait/` | `senshi.webp` |
-| 正文 CG | `assets/cg/` | `dragon-steak.webp` |
+| 正文 CG | `assets/cg/` | `red-dragon-meal.webp` |
 | 地图 | `assets/map/` | `world.webp` `maze.webp` |
 
 名字到文件的映射写在 `assets/manifest.json`。详细规格见 `cards/manfan/assets/README.md`。
+
+**图片走自建图床**，不走本仓库：`map-config.js` 的 `图床` 常量 + `file/manfan/<slug>.webp`。
+仓库里的 `assets/` 只留备份与约定，`manifest.json` 是「名字 → 相对路径」的唯一登记处
+（26 道料理 CG + 2 张地图已登记，头像待补）。
 
 ---
 
