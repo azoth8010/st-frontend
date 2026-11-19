@@ -801,7 +801,7 @@ export function 挂载() {
     const wrap = 元素('div', 'dmk-mapwrap');
     const img = 元素('img');
     img.alt = 视图 === '世界' ? '世界地图' : '迷宫剖面';
-    img.loading = 'lazy';
+    img.loading = 'eager';  // 地图是首屏内容，默认下载
     // 路径 + 备用后缀：转 webp 之前先吃 png，转了自动走 webp
     const 候选 = [图.路径].concat(图.备用 || []);
     let 第几张 = 0;
