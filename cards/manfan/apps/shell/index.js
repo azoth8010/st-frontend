@@ -869,7 +869,7 @@ export function 挂载() {
     if (子 === '图鉴') {
       const 原 = Object.keys(图.原作).length;
       const 创 = Object.keys(图.原创).length;
-      const sec1 = 节('原作 · ' + 原 + ' / 17');
+      const sec1 = 节('原作 · ' + 原 + ' / 26');
       if (!原) sec1.appendChild(元素('div', 'dmk-empty', '还没做过原作菜。第一次做成会自动入册。'));
       else Object.keys(图.原作).forEach(function (k) {
         const it = 图.原作[k] || {};
