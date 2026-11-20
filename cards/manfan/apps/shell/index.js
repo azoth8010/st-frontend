@@ -17,7 +17,6 @@ import { 样式Token } from '../_shared/tokens.js';
 import * as 交互 from '../_shared/interaction.js';
 import { 地图配置, 取图地址, 头像地址 } from '../../map-config.js';
 import { 骰子已开, 设骰子开关, 挂载骰子 } from '../../dice.js';
-import { 挂载状态条 } from '../_shared/statusbar.js';
 
 const 根ID = 'dmk-root';
 const 胶囊ID = 'dmk-capsule';
@@ -1063,9 +1062,8 @@ export function 挂载() {
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   挂载();
-  // 骰池与状态条都挂在模块加载时：靠事件工作，与抽屉开不开无关
+  // 骰池挂在模块加载时：它靠事件工作，与抽屉开不开无关
   挂载骰子();
-  挂载状态条();
 }
 
 export default 挂载;
