@@ -51,7 +51,7 @@ const 样式 = `
 .dmk-scrim.dmk-on{opacity:1;visibility:visible;pointer-events:auto}
 
 .dmk-drawer{position:fixed;top:50%;left:50%;
-  width:min(920px,calc(100vw - 48px));height:min(820px,100vh);height:min(820px,100dvh);
+  width:min(920px,calc(100vw - 40px));height:min(760px,calc(100dvh - 112px));
   background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-lg);
   display:flex;flex-direction:column;overflow:hidden;
   opacity:0;visibility:hidden;pointer-events:none;
@@ -60,6 +60,9 @@ const 样式 = `
   box-shadow:var(--sh-5)}
 .dmk-drawer.dmk-on{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
 @media (prefers-reduced-motion:reduce){.dmk-drawer,.dmk-scrim{transition:none}}
+@media (max-width:560px){
+  .dmk-drawer{width:100vw;height:calc(100dvh - 24px);border-radius:var(--r-md)}
+}
 
 /* 纸纹：只做一层，不叠分离机制 */
 .dmk-drawer::before{content:"";position:absolute;inset:0;pointer-events:none;
@@ -72,7 +75,7 @@ const 样式 = `
 .dmk-hd1{display:flex;align-items:flex-start;gap:var(--s-3)}
 .dmk-hd-title{flex:1;min-width:0}
 .dmk-hd-title h1{margin:0;font:600 20px/1.3 var(--serif);letter-spacing:2px;color:var(--text-primary)}
-.dmk-hd-meta{margin:var(--s-1) 0 0;font-size:12px;line-height:1.6;color:var(--text-secondary);
+.dmk-hd-meta{margin:var(--s-1) 0 0;font-size:13px;line-height:1.6;color:var(--text-secondary);
   border:0;background:none}
 .dmk-epigraph{margin:var(--s-2) 0 0;padding:0 0 var(--s-2);font:12px/1.7 var(--serif);
   color:var(--text-tertiary);border-bottom:1px solid var(--border)}
@@ -83,7 +86,7 @@ const 样式 = `
 .dmk-gear:hover,.dmk-close:hover{border-color:var(--danger);color:var(--danger)}
 .dmk-meters{display:flex;gap:var(--s-3);margin-top:var(--s-3);flex-wrap:wrap}
 .dmk-meter{flex:1 1 120px;min-width:110px}
-.dmk-meter .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary)}
+.dmk-meter .lab{display:flex;justify-content:space-between;font-size:13px;color:var(--text-secondary)}
 .dmk-meter .lab b{font-weight:600;color:var(--text-primary);font-variant-numeric:tabular-nums}
 .dmk-bar{height:4px;margin-top:var(--s-1);background:var(--paper-deep);overflow:hidden}
 .dmk-bar i{display:block;height:100%;background:var(--action)}
@@ -109,16 +112,16 @@ const 样式 = `
 
 /* ===== 内容 ===== */
 .dmk-sec{margin:0 0 var(--s-4)}
-.dmk-sec h3{margin:0 0 var(--s-2);font-size:12px;font-weight:600;color:var(--text-secondary);
+.dmk-sec h3{margin:0 0 var(--s-2);font-size:13px;font-weight:600;color:var(--text-secondary);
   letter-spacing:1px;border-bottom:1px solid var(--border);padding-bottom:var(--s-1)}
 .dmk-row{display:flex;gap:var(--s-3);padding:var(--s-2) 0;
-  border-bottom:1px dashed var(--border);font-size:14px}
+  border-bottom:1px dashed var(--border);font-size:15px}
 .dmk-row:last-child{border-bottom:0}
 .dmk-row .k{flex:0 0 78px;color:var(--text-secondary);font-size:12px}
 .dmk-row .v{flex:1;color:var(--text-primary);word-break:break-word;line-height:1.7}
 .dmk-row[data-done] .v{color:var(--action);font-weight:600}
 .dmk-mile{display:flex;align-items:baseline;gap:var(--s-3);padding:var(--s-2) 0;
-  border-bottom:1px dashed var(--border);font-size:14px}
+  border-bottom:1px dashed var(--border);font-size:15px}
 .dmk-mile:last-child{border-bottom:0}
 .dmk-mile .n{flex:1;min-width:0;line-height:1.6;color:var(--text-primary);word-break:break-word}
 .dmk-mile .n b{font-weight:600;color:var(--text-secondary);margin-right:var(--s-2);font-variant-numeric:tabular-nums}
@@ -148,9 +151,9 @@ const 样式 = `
 .dmk-empty{padding:var(--s-8) var(--s-2);text-align:center;
   color:var(--text-secondary);font-size:14px;line-height:1.8}
 .dmk-avatar img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
-.dmk-avatar{width:64px;height:64px;flex:0 0 auto;border-radius:var(--r-md);overflow:hidden;
+.dmk-avatar{width:84px;height:84px;flex:0 0 auto;border-radius:var(--r-md);overflow:hidden;
   background:var(--action);color:var(--text-on-action);
-  display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:600;
   border:2px solid var(--border-strong)}
 .dmk-who{display:flex;gap:var(--s-3);padding:var(--s-2) 0;border-bottom:1px dashed var(--border)}
 .dmk-who .info{flex:1;min-width:0}
@@ -864,7 +867,7 @@ export function 挂载() {
         el.style.height = (band.y1 - band.y0) + '%';
         el.setAttribute('aria-label', band.名);
         交互.可点按(el, function () {
-          显示详情(band.名, '对应深度：' + String(band.深度));
+          显示详情(band.名, '对应深度：' + String(band.深度) + (band.魔物 ? '。关键魔物：' + band.魔物 : ''));
         });
         wrap.appendChild(el);
       });
