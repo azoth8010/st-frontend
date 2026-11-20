@@ -81,3 +81,57 @@ export function 按位置找节点(位置) {
   const 命 = 地图配置.世界.节点.find(function (n) { return n.id === 位置.大区域; });
   return 命 || null;
 }
+
+/** 角色 slug：中文名 / 简称 / 别名 → 资源 slug。没图的人也在表里，前端查不到图会退回首字。 */
+export const 角色slug = {
+  '莱欧斯': 'laios', '莱欧斯·托登': 'laios', '莱奥斯': 'laios',
+  '玛露希尔': 'marcille', '玛露希尔·多纳托': 'marcille', '玛露西尔': 'marcille', '马鹿': 'marcille',
+  '齐尔查克': 'chilchuck', '齐尔查克·蒂姆兹': 'chilchuck', '奇尔查克': 'chilchuck',
+  '森西': 'senshi', '先西': 'senshi',
+  '法琳': 'falin', '法琳·托登': 'falin',
+  '伊津津美': 'izutsumi', '马醉木': 'izutsumi', '莞苞': 'izutsumi',
+  '娜玛莉': 'namari',
+  '修洛': 'shuro', '半本俊朗': 'shuro', '俊朗': 'shuro',
+  '剑助': 'kensuke', '卡布尔': 'kabru', '喀布尔': 'kabru',
+  '铃夏': 'rinsha', '铃夏·法娜': 'rinsha', '林夏': 'rinsha',
+  '米克贝尔': 'mickbell', '米克贝尔·托马兹': 'mickbell',
+  '小黑': 'kuro', '黑子': 'kuro', '戴阿': 'daya', '戴娅': 'daya',
+  '霍尔姆': 'holm', '霍尔姆·克兰诺姆': 'holm',
+  '坦斯': 'tansu', '坦斯·弗洛卡': 'tansu',
+  '雅恩': 'yarn', '雅恩·弗洛卡': 'yarn',
+  '卡卡': 'kaka', '琪琪': 'kiki', '多尼': 'doni', '菲奥妮露': 'fionil',
+  '米斯伦': 'mithrun', '西丝席思': 'cithis', '芙蕾琪': 'fleki', '黎希恩': 'lycion',
+  '欧塔': 'otta', '帕塔朵': 'pattadol', '芙拉梅拉': 'flamela', '米尔西莉露': 'milsiril',
+  '希斯路': 'thistle', '狂乱的魔法师': 'thistle',
+  '迪尔加路': 'delgal', '迪尔加路·梅利尼': 'delgal',
+  '亚阿多': 'yaad', '亚阿多·梅利尼': 'yaad',
+  '翼狮': 'winged-lion',
+  '祖恩': 'zon', '宗恩': 'zon',
+  '莉多': 'leed', '黎德': 'leed',
+  '犬蓼': 'inutade', '希若希': 'inutade',
+  '飞燕': 'hien', '名香': 'hien',
+  '舞鹤': 'maizuru', '红千鸟': 'benichidori',
+  '吉林': 'gillin', '布里甘': 'brigan', '布里坎': 'brigan',
+  '英帕': 'invar', '印巴': 'invar', '图坦': 'totan', '兜坦': 'totan',
+  '奴鲁': 'null', '奴鲁·米尔切恩': 'null', '努鲁': 'null',
+  '丹丹': 'dandan',
+  '瓦恩兹': 'wanz', '阿西比雅': 'asibia',
+  '梅尔杰克': 'mayjack', '芙兰托姆': 'fullertom', '帕克帕蒂': 'packpatty',
+  '多纳托': 'donato',
+  '希梅雅': 'elf-queen', '精灵女王': 'elf-queen',
+  '岛主': 'island-lord', '里岛主': 'inner-island-lord',
+};
+
+/** 有头像文件的 slug（❌ 那几个不在此列，前端退回占位）。 */
+const 有头像 = new Set(['marcille','chilchuck','senshi','falin','izutsumi','namari','shuro','kensuke',
+ 'kabru','rinsha','mickbell','kuro','daya','holm','tansu','yarn','kaka','kiki','doni','fionil',
+ 'mithrun','cithis','fleki','lycion','otta','pattadol','flamela','milsiril','thistle','delgal',
+ 'yaad','winged-lion','zon','leed','inutade','hien','maizuru','benichidori','gillin','brigan',
+ 'invar','totan','dandan','donato','elf-queen']);
+
+/** 头像地址；查不到或没有图返回 null。 */
+export function 头像地址(名) {
+  const slug = 角色slug[String(名 || '').trim()];
+  if (!slug || !有头像.has(slug)) return null;
+  return 图床 + 'file/manfan/' + slug + '.webp';
+}

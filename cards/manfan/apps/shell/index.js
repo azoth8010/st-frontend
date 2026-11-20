@@ -15,7 +15,7 @@
 import { 格式化时刻, 格式化位置, 深度名 } from '../../adapter.js';
 import { 样式Token } from '../_shared/tokens.js';
 import * as 交互 from '../_shared/interaction.js';
-import { 地图配置, 取图地址 } from '../../map-config.js';
+import { 地图配置, 取图地址, 头像地址 } from '../../map-config.js';
 import { 骰子已开, 设骰子开关, 挂载骰子 } from '../../dice.js';
 
 const 根ID = 'dmk-root';
@@ -147,7 +147,8 @@ const 样式 = `
   border-radius:var(--r-sm);font-size:12px;color:var(--text-secondary);margin:var(--s-1) var(--s-1) 0 0}
 .dmk-empty{padding:var(--s-8) var(--s-2);text-align:center;
   color:var(--text-secondary);font-size:14px;line-height:1.8}
-.dmk-avatar{width:64px;height:64px;flex:0 0 auto;border-radius:var(--r-md);
+.dmk-avatar img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+.dmk-avatar{width:64px;height:64px;flex:0 0 auto;border-radius:var(--r-md);overflow:hidden;
   background:var(--action);color:var(--text-on-action);
   display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;
   border:2px solid var(--border-strong)}
@@ -665,6 +666,22 @@ export function 挂载() {
     });
   }
 
+  /* 头像块：有图用图，没图/加载失败退回首字占位 */
+  function 头像块(名) {
+    const 址 = 头像地址(名);
+    if (!址) return 元素('div', 'dmk-avatar', String(名).slice(0, 1));
+    const d = 元素('div', 'dmk-avatar');
+    const img = 元素('img');
+    img.alt = 名;
+    img.loading = 'lazy';
+    img.addEventListener('error', function () {
+      d.textContent = String(名).slice(0, 1);
+    });
+    img.src = 址;
+    d.appendChild(img);
+    return d;
+  }
+
   function 页关系(s) {
     const 在场 = Object.keys(s.在场);
     if (在场.length) {
@@ -672,7 +689,7 @@ export function 挂载() {
       在场.forEach(function (k) {
         const it = s.在场[k] || {};
         const w = 元素('div', 'dmk-who');
-        w.appendChild(元素('div', 'dmk-avatar', k.slice(0, 1)));
+        w.appendChild(头像块(k));
         const info = 元素('div', 'info');
         const nm = 元素('div', 'nm');
         nm.appendChild(元素('span', null, k));
@@ -693,7 +710,7 @@ export function 挂载() {
       名.sort(function (a, b) { return (s.人物[b].好感 || 0) - (s.人物[a].好感 || 0); }).forEach(function (k) {
         const it = s.人物[k] || {};
         const w = 元素('div', 'dmk-who');
-        w.appendChild(元素('div', 'dmk-avatar', k.slice(0, 1)));
+        w.appendChild(头像块(k));
         const info = 元素('div', 'info');
         const nm = 元素('div', 'nm');
         nm.appendChild(元素('span', null, k));
