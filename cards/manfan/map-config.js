@@ -123,7 +123,7 @@ export const 角色slug = {
 };
 
 /** 有头像文件的 slug（❌ 那几个不在此列，前端退回占位）。 */
-const 有头像 = new Set(['marcille','chilchuck','senshi','falin','izutsumi','namari','shuro','kensuke',
+const 有头像 = new Set(['laios','marcille','chilchuck','senshi','falin','izutsumi','namari','shuro','kensuke',
  'kabru','rinsha','mickbell','kuro','daya','holm','tansu','yarn','kaka','kiki','doni','fionil',
  'mithrun','cithis','fleki','lycion','otta','pattadol','flamela','milsiril','thistle','delgal',
  'yaad','winged-lion','zon','leed','inutade','hien','maizuru','benichidori','gillin','brigan',
