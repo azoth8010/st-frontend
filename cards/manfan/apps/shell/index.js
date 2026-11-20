@@ -157,9 +157,9 @@ const 样式 = `
   border:2px solid var(--border-strong)}
 .dmk-who{display:flex;gap:var(--s-3);padding:var(--s-2) 0;border-bottom:1px dashed var(--border)}
 .dmk-who .info{flex:1;min-width:0}
-.dmk-who .nm{font-size:15.5px;color:var(--text-primary);display:flex;gap:var(--s-2);align-items:baseline}
-.dmk-who .nm small{font-size:13.5px;color:var(--action)}
-.dmk-who .rel{font-size:13.5px;color:var(--text-secondary);margin-top:var(--s-1);word-break:break-word}
+.dmk-who .nm{font-size:17px;color:var(--text-primary);display:flex;gap:var(--s-2);align-items:baseline}
+.dmk-who .nm small{font-size:15px;color:var(--action)}
+.dmk-who .rel{font-size:15px;color:var(--text-secondary);margin-top:var(--s-1);word-break:break-word}
 
 /* ===== 地图 ===== */
 .dmk-mapwrap{position:relative;width:100%;background:#241d15;
