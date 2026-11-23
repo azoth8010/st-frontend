@@ -994,6 +994,14 @@ export function 挂载() {
     const 提示 = 元素('div', 'dmk-empty', '这里只把选择写成一句话，不改任何变量。扣料、饱食、图鉴由 AI 在变量更新里结算。');
     form.appendChild(提示);
     sec.appendChild(form);
+
+    /* 现在能做：拿背包食材跑一遍 26 道表，先给玩家看一眼 */
+    const 可做 = 交互.可做原作菜(食材, 做法表);
+    const sec能做 = 节('现在能做 · ' + 可做.length);
+    if (!可做.length) sec能做.appendChild(元素('div', 'dmk-empty', '背包里的食材还凑不出一道原作菜。'));
+    else 可做.forEach(function (x) { sec能做.appendChild(行(x.菜名, x.主材 + ' · ' + x.做法)); });
+    body.appendChild(sec能做);
+
     body.appendChild(sec);
   }
 

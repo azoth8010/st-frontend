@@ -172,6 +172,26 @@ export function 料理输入(选项) {
     + '｜消耗 ' + 消耗.join('、') + '〕';
 }
 
+/**
+ * 背包食材 × 做法表 → 现在能做的原作菜。
+ * 走 查原作菜，昆虫与红龙那几条合并规则自动生效；同名菜只留第一条。
+ */
+export function 可做原作菜(食材, 做法表) {
+  const 出 = [];
+  const 见 = Object.create(null);
+  (食材 || []).forEach(function (材) {
+    const 净 = String(材).replace(/（[^）]*）$/, '');
+    (做法表 || []).forEach(function (法) {
+      const 名 = 查原作菜(净, 法);
+      if (名 && !见[名]) {
+        见[名] = 1;
+        出.push({ 菜名: 名, 主材: 材, 做法: 法 });
+      }
+    });
+  });
+  return 出;
+}
+
 /** 生成地图「前往」用的玩家输入。 */
 export function 前往输入(地点) {
   const 名 = String(地点 || '').trim();
